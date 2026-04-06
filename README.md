@@ -1,4 +1,4 @@
-# PulseBox - AI Teacher Personal Assistant
+# AI Teacher Personal Assistant
 
 **PulseBox** is an AI-powered personal assistant designed specifically for teachers to reduce administrative burden, streamline lesson planning, automate grading, and help teachers focus on what matters most - teaching.
 
