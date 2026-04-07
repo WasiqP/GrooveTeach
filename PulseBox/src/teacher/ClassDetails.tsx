@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
+import { ink } from '../theme/typography';
 import BackIcon from '../../assets/images/Back.svg';
+import { PulseScrollView } from '../components/PulseScrollView';
 import Svg, { Path } from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ClassDetails'>;
 
 // Icons
-const StudentsIcon = ({ size = 24, color = '#666' }) => (
+const StudentsIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     <Path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -109,7 +111,7 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView
+      <PulseScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -121,7 +123,7 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
           
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <StudentsIcon size={20} color="#666" />
+              <StudentsIcon size={20} color={ink.inkSoft} />
               <Text style={styles.infoText}>{classData.studentCount} Students</Text>
             </View>
             <Text style={styles.infoText}>•</Text>
@@ -160,7 +162,7 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
             <Text style={styles.activitySubtext}>Activity will appear here</Text>
           </View>
         </View>
-      </ScrollView>
+      </PulseScrollView>
     </SafeAreaView>
   );
 };
@@ -189,7 +191,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   placeholder: {
@@ -214,14 +216,14 @@ const styles = StyleSheet.create({
   className: {
     fontSize: 24,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 8,
   },
   classSubject: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginBottom: 16,
   },
   infoRow: {
@@ -236,14 +238,14 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginRight: 8,
   },
   roomText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
   },
   quickActionsSection: {
     paddingHorizontal: 24,
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 16,
   },
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
   quickActionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     textAlign: 'center',
   },
@@ -299,14 +301,14 @@ const styles = StyleSheet.create({
   },
   activityText: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginBottom: 4,
   },
   activitySubtext: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#999999',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
   },
 });
 

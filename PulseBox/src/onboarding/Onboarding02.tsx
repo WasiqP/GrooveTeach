@@ -1,6 +1,6 @@
 import React from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App.tsx';
+import type { RootStackParamList } from '../types/navigation';
 import OnboardingCard from './../components/OnboardingCard';
 import { Image } from 'react-native';
 
@@ -18,8 +18,8 @@ const Onboarding02: React.FC<Props> = ({ navigation }) => {
   return (
     <OnboardingCard
       Illustration={Onboarding2Illustration}
-      title="Create Custom Forms"
-      description="Build beautiful feedback forms tailored to your business needs. Choose from multiple field types and customize everything to match your brand."
+      title="Plan and assign in one place"
+      description="Create classes, build tasks and quizzes, and keep everything tied to the right group—without spreadsheets or a pile of separate apps."
       step={2}
       total={3}
       onNext={() => navigation.navigate('Onboarding03')}

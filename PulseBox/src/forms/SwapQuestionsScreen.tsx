@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, Pressable, PanResponder, Dimensions, Vibration } from 'react-native';
+import { View, Text, StyleSheet, Animated, Pressable, PanResponder, Dimensions, Vibration } from 'react-native';
+import type { ScrollView } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { GestureResponderEvent, PanResponderGestureState } from 'react-native';
@@ -8,7 +9,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { useForms } from '../context/FormsContext';
 import { theme } from '../theme/Colors';
+import { ink } from '../theme/typography';
 import BackIcon from '../../assets/images/Back.svg';
+import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SwapQuestions'>;
 
@@ -26,7 +29,7 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView | null>(null);
   const scrollYRef = useRef(0);
-  const autoScrollTimerRef = useRef<NodeJS.Timer | null>(null);
+  const autoScrollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollDeltaRef = useRef(0); // negative = up, positive = down
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
   const ITEM_HEIGHT = 64; // approximate row height for drag calculations
@@ -76,7 +79,7 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
     const translateY = useRef(new Animated.Value(0)).current;
     const scale = useRef(new Animated.Value(1)).current;
     const opacity = useRef(new Animated.Value(1)).current;
-    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const dragActiveRef = useRef(false);
 
     const panResponder = useRef(
@@ -222,8 +225,10 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
           <Text style={styles.infoDesc}>Long press and drag questions up or down to change their order</Text>
         </View>
 
-        <ScrollView 
-          ref={ref => (scrollRef.current = ref)}
+        <PulseScrollView 
+          ref={ref => {
+            scrollRef.current = ref;
+          }}
           contentContainerStyle={[styles.swapList, { paddingBottom: insets.bottom + 24 }]}
           showsVerticalScrollIndicator={false}
           onScroll={e => {
@@ -234,7 +239,7 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
           {questions.map((q, i) => (
             <SwapRow key={`swap-${q.id}-${i}`} q={q} index={i} />
           ))}
-        </ScrollView>
+        </PulseScrollView>
       </View>
     </Animated.View>
   );
@@ -243,7 +248,7 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.background,
+    backgroundColor: ink.canvas,
   },
   header: {
     paddingTop: 70,
@@ -275,7 +280,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 16,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: theme.text,
   },
   content: {
@@ -293,13 +298,13 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: theme.text,
     marginBottom: 8,
   },
   infoDesc: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: 'rgba(0,0,0,0.6)',
     lineHeight: 20,
   },
@@ -329,14 +334,14 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
     marginRight: 14,
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: theme.text,
-    backgroundColor: theme.backgroundAlt,
+    backgroundColor: ink.canvas,
   },
   swapText: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: theme.text,
   },
   

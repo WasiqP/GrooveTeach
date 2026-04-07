@@ -5,7 +5,9 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BackIcon from '../../assets/images/Back.svg';
 import { useClasses, ClassData } from '../context/ClassesContext';
+import { ink } from '../theme/typography';
 import Svg, { Path } from 'react-native-svg';
+import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateClass'>;
 
@@ -16,7 +18,7 @@ interface Student {
 }
 
 // Icons
-const PlusIcon = ({ size = 20, color = '#A060FF' }) => (
+const PlusIcon = ({ size = 20, color = '#A060FF' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 5V19M5 12H19" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
@@ -28,7 +30,7 @@ const XIcon = ({ size = 18, color = '#F44336' }) => (
   </Svg>
 );
 
-const UserIcon = ({ size = 20, color = '#666' }) => (
+const UserIcon = ({ size = 20, color = ink.inkSoft }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     <Path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -111,7 +113,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView
+      <PulseScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -123,7 +125,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="e.g., Mathematics 101"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={className}
               onChangeText={setClassName}
             />
@@ -134,7 +136,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="e.g., Mathematics, English, Science"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={subject}
               onChangeText={setSubject}
             />
@@ -171,7 +173,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="e.g., Mon, Wed, Fri - 9:00 AM"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={schedule}
               onChangeText={setSchedule}
             />
@@ -182,7 +184,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="e.g., Room 205"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={roomNumber}
               onChangeText={setRoomNumber}
             />
@@ -199,7 +201,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
                   <TextInput
                     style={[styles.input, styles.studentNameInput]}
                     placeholder="Student Name"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={ink.placeholder}
                     value={studentName}
                     onChangeText={setStudentName}
                   />
@@ -208,7 +210,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
                   <TextInput
                     style={[styles.input, styles.studentEmailInput]}
                     placeholder="Email (Optional)"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={ink.placeholder}
                     value={studentEmail}
                     onChangeText={setStudentEmail}
                     keyboardType="email-address"
@@ -265,7 +267,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.createBtnText}>Create Class</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </PulseScrollView>
     </SafeAreaView>
   );
 };
@@ -294,7 +296,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   placeholder: {
@@ -316,7 +318,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginBottom: 8,
   },
@@ -328,7 +330,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
   },
   gradeScroll: {
@@ -349,8 +351,8 @@ const styles = StyleSheet.create({
   },
   gradeChipText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: '#666666',
+    fontFamily: 'DMSans-Medium',
+    color: '#1A1A22',
   },
   gradeChipTextActive: {
     color: '#FFFFFF',
@@ -371,13 +373,13 @@ const styles = StyleSheet.create({
   createBtnText: {
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   subLabel: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#999999',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginTop: 4,
     marginBottom: 12,
   },
@@ -416,7 +418,7 @@ const styles = StyleSheet.create({
   studentsListTitle: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginBottom: 12,
   },
@@ -451,14 +453,14 @@ const styles = StyleSheet.create({
   studentItemName: {
     fontSize: 15,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginBottom: 2,
   },
   studentItemEmail: {
     fontSize: 13,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
   },
   removeStudentBtn: {
     width: 32,

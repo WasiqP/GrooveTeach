@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, Dimensions, Share as RNShare, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Alert, Dimensions, Share as RNShare, Linking } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { useForms } from '../context/FormsContext';
@@ -9,6 +9,7 @@ import ShareIcon from '../../assets/images/share.svg';
 import Clipboard from '@react-native-clipboard/clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { captureRef } from 'react-native-view-shot';
+import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShareForm'>;
 
@@ -142,7 +143,7 @@ const ShareForm: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.backBtn} />
       </View>
 
-      <ScrollView 
+      <PulseScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -329,7 +330,7 @@ const ShareForm: React.FC<Props> = ({ route, navigation }) => {
             </View>
           </View>
         )}
-      </ScrollView>
+      </PulseScrollView>
     </View>
   );
 };
@@ -364,13 +365,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   headerSubtitle: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginTop: 2,
   },
   scrollView: {
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 12,
   },
@@ -417,13 +418,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
   },
   previewDescription: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     lineHeight: 20,
   },
   tabSelector: {
@@ -445,12 +446,12 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: '#666666',
+    fontFamily: 'DMSans-Medium',
+    color: '#1A1A22',
   },
   tabTextActive: {
     color: '#FFFFFF',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
   },
   contentSection: {
     flex: 1,
@@ -461,7 +462,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginBottom: 12,
   },
@@ -479,7 +480,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
   },
   copyBtn: {
@@ -491,13 +492,13 @@ const styles = StyleSheet.create({
   },
   copyBtnText: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   helperText: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     lineHeight: 18,
   },
   shareActionBtn: {
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
   shareActionText: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
   },
   socialGrid: {
@@ -543,13 +544,13 @@ const styles = StyleSheet.create({
   },
   socialLabel: {
     fontSize: 12,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
   },
   qrDescription: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     lineHeight: 20,
     marginBottom: 24,
   },
@@ -579,15 +580,15 @@ const styles = StyleSheet.create({
   qrFormName: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginTop: 16,
     marginBottom: 4,
   },
   qrHelperText: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
   },
   saveQRBtn: {
     backgroundColor: '#000000',
@@ -598,7 +599,7 @@ const styles = StyleSheet.create({
   },
   saveQRBtnText: {
     fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   qrActions: {
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
   },
   qrActionText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
   },
   errorContainer: {
@@ -630,8 +631,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
   },
   webIndicator: {
     marginTop: 12,
@@ -644,13 +645,13 @@ const styles = StyleSheet.create({
   },
   webIndicatorText: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#2E7D32',
     marginBottom: 4,
   },
   webIndicatorSubtext: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#4CAF50',
   },
   previewBtn: {
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
   },
   previewBtnText: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   openBrowserBtn: {
@@ -676,7 +677,7 @@ const styles = StyleSheet.create({
   },
   openBrowserBtnText: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
   },
 });

@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
+import { PulseScrollView } from '../components/PulseScrollView';
+import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
 import { useForms } from '../context/FormsContext';
 import FormIcon from '../components/FormIcons';
+import { theme, fonts as F, ink, radius } from '../theme';
 import Svg, { Path } from 'react-native-svg';
+
+const CANVAS = ink.canvas;
+const INK = ink.ink;
+const INK_SOFT = ink.inkSoft;
+const BORDER_INK = ink.borderInk;
+const BORDER_WIDTH = ink.borderWidth;
+const ROW_DIVIDER = ink.rowDivider;
+const R_CARD = radius.card;
+const R_INPUT = radius.input;
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
 
@@ -25,7 +37,7 @@ interface Quiz {
 }
 
 // Icons
-const QuizIcon = ({ size = 24, color = '#666' }) => (
+const QuizIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M9 11L12 14L22 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     <Path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -102,7 +114,7 @@ const Quizzes: React.FC<Props> = ({ navigation }) => {
       case 'quiz': return '#4CAF50';
       case 'assignment': return '#2196F3';
       case 'test': return '#F44336';
-      default: return '#666666';
+      default: return '#1A1A22';
     }
   };
 
@@ -117,20 +129,19 @@ const Quizzes: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
+      <TabScreenHeaderBar navigation={navigation}>
+        <View>
           <Text style={styles.title}>Quizzes & Assignments</Text>
+          <Text style={styles.subtitle}>Create and manage quizzes, assignments, and tests</Text>
         </View>
-        <Text style={styles.subtitle}>Create and manage quizzes, assignments, and tests</Text>
-      </View>
+      </TabScreenHeaderBar>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="Search quizzes..."
-          placeholderTextColor="#999"
+          placeholderTextColor={ink.placeholder}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -194,14 +205,14 @@ const Quizzes: React.FC<Props> = ({ navigation }) => {
       </Pressable>
 
       {/* Quizzes List */}
-      <ScrollView
+      <PulseScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {filteredQuizzes.length === 0 ? (
           <View style={styles.emptyState}>
-            <QuizIcon size={64} color="#CCCCCC" />
+            <QuizIcon size={64} color={ink.iconMuted} />
             <Text style={styles.emptyTitle}>
               {searchQuery ? 'No quizzes found' : 'No quizzes yet'}
             </Text>
@@ -283,7 +294,7 @@ const Quizzes: React.FC<Props> = ({ navigation }) => {
             </Pressable>
           )})
         )}
-      </ScrollView>
+      </PulseScrollView>
 
       <BottomTab navigation={navigation} currentRoute="Quizzes" />
     </SafeAreaView>
@@ -293,142 +304,126 @@ const Quizzes: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: CANVAS,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
-    color: '#000000',
+    lineHeight: 38,
+    fontFamily: F.outfitBlack,
+    color: INK,
+    letterSpacing: -0.8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
   },
   searchContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: CANVAS,
   },
   searchInput: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    borderRadius: R_INPUT,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#000000',
+    paddingVertical: 14,
+    fontSize: 15,
+    fontFamily: F.dmRegular,
+    color: INK,
   },
   filterTabs: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 16,
     gap: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: CANVAS,
   },
   filterTab: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
   },
   filterTabActive: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
+    backgroundColor: INK,
+    borderColor: INK,
   },
   filterTabText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: '#666666',
+    fontFamily: F.dmMedium,
+    color: INK_SOFT,
   },
   filterTabTextActive: {
-    color: '#FFFFFF',
+    color: CANVAS,
   },
   createBtn: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#A060FF',
-    borderRadius: 16,
-    marginHorizontal: 24,
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: theme.primary,
+    borderRadius: R_CARD,
+    marginHorizontal: 20,
     marginTop: 8,
-    marginBottom: 24,
-    shadowColor: '#A060FF',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: 16,
   },
   createContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
   },
   plusIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#A060FF',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   plusText: {
-    fontSize: 24,
-    fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
-    color: '#FFFFFF',
+    fontSize: 22,
+    fontFamily: F.dmBold,
+    color: theme.white,
   },
   createText: {
     flex: 1,
   },
   createTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
-    color: '#A060FF',
-    marginBottom: 2,
+    fontSize: 17,
+    lineHeight: 22,
+    fontFamily: F.outfitBold,
+    color: theme.primary,
+    marginBottom: 3,
   },
   createDesc: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    lineHeight: 19,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 100,
   },
   quizCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    borderRadius: R_CARD,
     padding: 16,
     marginBottom: 12,
     alignItems: 'center',
@@ -436,11 +431,11 @@ const styles = StyleSheet.create({
   quizIcon: {
     width: 48,
     height: 48,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
+    borderRadius: 24,
+    backgroundColor: theme.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   quizContent: {
     flex: 1,
@@ -452,10 +447,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   quizTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
-    color: '#000000',
+    fontSize: 17,
+    lineHeight: 22,
+    fontFamily: F.dmBold,
+    color: INK,
     flex: 1,
     marginRight: 8,
   },
@@ -466,12 +461,13 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     fontSize: 10,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: F.dmSemi,
   },
   quizClass: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    lineHeight: 19,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
     marginBottom: 8,
   },
   quizInfo: {
@@ -479,14 +475,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quizInfoText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
     marginRight: 12,
   },
   progressBar: {
     height: 4,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: ROW_DIVIDER,
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -503,7 +500,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -514,19 +513,21 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
-    color: '#000000',
+    fontSize: 22,
+    lineHeight: 28,
+    fontFamily: F.outfitExtraBold,
+    color: INK,
+    letterSpacing: -0.5,
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   emptySubtitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontSize: 16,
+    lineHeight: 23,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 32,
   },
 });
 

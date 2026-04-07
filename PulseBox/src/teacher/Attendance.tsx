@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Alert, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
+import { ink } from '../theme/typography';
 import BackIcon from '../../assets/images/Back.svg';
 import Svg, { Path } from 'react-native-svg';
+import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendance'>;
 
@@ -163,14 +165,14 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
         <TextInput
           style={styles.searchInput}
           placeholder="Search students..."
-          placeholderTextColor="#999"
+          placeholderTextColor={ink.placeholder}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
 
       {/* Students List */}
-      <ScrollView
+      <PulseScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -232,7 +234,7 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
             </View>
           </View>
         ))}
-      </ScrollView>
+      </PulseScrollView>
 
       {/* Save Button - Fixed Footer */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
@@ -276,14 +278,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 4,
   },
   headerDate: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
   },
   placeholder: {
     width: 40,
@@ -298,8 +300,8 @@ const styles = StyleSheet.create({
   },
   statsTitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#666666',
+    fontFamily: 'DMSans-SemiBold',
+    color: '#1A1A22',
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -335,7 +337,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#4CAF50',
     marginBottom: 4,
   },
@@ -347,8 +349,8 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    fontFamily: 'Poppins-Medium',
-    color: '#666666',
+    fontFamily: 'DMSans-Medium',
+    color: '#1A1A22',
   },
   searchContainer: {
     paddingHorizontal: 24,
@@ -364,7 +366,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
   },
   scrollView: {
@@ -408,12 +410,12 @@ const styles = StyleSheet.create({
   studentInitial: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   studentName: {
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     flex: 1,
   },
@@ -486,7 +488,7 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
 });

@@ -6,6 +6,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { theme } from '../theme/Colors';
+import { ink } from '../theme/typography';
 import { useForms } from '../context/FormsContext';
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
@@ -408,7 +409,7 @@ const EditForm: React.FC<Props> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.background,
+    backgroundColor: ink.canvas,
   },
   header: {
     paddingTop: 70,
@@ -450,25 +451,25 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 16,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   pageTitle: {
     fontSize: 24,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 6,
   },
   pageDesc: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
     lineHeight: 18,
   },
   content: {
     flex: 1,
-    backgroundColor: theme.background,
+    backgroundColor: ink.canvas,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 160,
@@ -547,9 +548,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.primary,
-    backgroundColor: theme.backgroundAlt,
+    backgroundColor: ink.canvas,
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     overflow: 'hidden',
     includeFontPadding: false,
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
   qTitle: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
   },
   qSubRow: {
@@ -572,7 +573,7 @@ const styles = StyleSheet.create({
   },
   qSub: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#888888',
   },
   requiredBadge: {
@@ -585,7 +586,7 @@ const styles = StyleSheet.create({
   },
   requiredText: {
     fontSize: 10,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#D32F2F',
   },
   qRight: {
@@ -620,7 +621,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 16,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   addBtn: {
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
   },
   addBtnText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: theme.primary,
   },
   sectionTitle: {

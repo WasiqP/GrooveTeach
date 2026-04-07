@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, Activi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
+import { ink } from '../theme/typography';
 import BackIcon from '../../assets/images/Back.svg';
+import { PulseScrollView } from '../components/PulseScrollView';
 import Svg, { Path } from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonPlanner'>;
@@ -70,7 +72,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView
+      <PulseScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -94,7 +96,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="e.g., Mathematics, English, Science"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={subject}
               onChangeText={setSubject}
             />
@@ -106,7 +108,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="e.g., Quadratic Equations, Shakespeare, Photosynthesis"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={topic}
               onChangeText={setTopic}
             />
@@ -145,7 +147,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="e.g., 45 minutes, 1 hour, 90 minutes"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={duration}
               onChangeText={setDuration}
             />
@@ -157,7 +159,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="What should students learn? (e.g., Understand the concept of...)"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={learningObjectives}
               onChangeText={setLearningObjectives}
               multiline
@@ -195,7 +197,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.infoText}>• Differentiation strategies</Text>
           </View>
         </View>
-      </ScrollView>
+      </PulseScrollView>
     </SafeAreaView>
   );
 };
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   placeholder: {
@@ -254,14 +256,14 @@ const styles = StyleSheet.create({
   aiTitle: {
     fontSize: 24,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 8,
   },
   aiSubtitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -275,7 +277,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginBottom: 8,
   },
@@ -287,7 +289,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
   },
   textArea: {
@@ -313,8 +315,8 @@ const styles = StyleSheet.create({
   },
   gradeChipText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: '#666666',
+    fontFamily: 'DMSans-Medium',
+    color: '#1A1A22',
   },
   gradeChipTextActive: {
     color: '#FFFFFF',
@@ -349,7 +351,7 @@ const styles = StyleSheet.create({
   generateBtnText: {
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   infoBox: {
@@ -362,14 +364,14 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginBottom: 4,
     lineHeight: 20,
   },

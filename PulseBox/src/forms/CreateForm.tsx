@@ -1,9 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import type { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import type { RootStackParamList } from '../types/navigation';
 import { theme } from '../theme';
+import { ink } from '../theme/typography';
+import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateForm'>;
 
@@ -123,7 +126,7 @@ const CreateForm: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <PulseScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
@@ -181,7 +184,7 @@ const CreateForm: React.FC<Props> = ({ navigation }) => {
             </Pressable>
           </View>
         </View>
-      </ScrollView>
+      </PulseScrollView>
     </SafeAreaView>
   );
 };
@@ -217,8 +220,8 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     textAlign: 'center',
   },
   backButton: {
@@ -231,23 +234,22 @@ const styles = StyleSheet.create({
   backIcon: {
     fontSize: 24,
     color: theme.primary,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
   },
   content: {
     flex: 1,
   },
   questionTitle: {
     fontSize: 28,
-    fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 12,
     lineHeight: 36,
   },
   questionSubtitle: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginBottom: 32,
     lineHeight: 24,
   },
@@ -255,7 +257,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   optionCard: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -277,15 +279,14 @@ const styles = StyleSheet.create({
   },
   optionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     marginBottom: 6,
   },
   optionDescription: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     lineHeight: 20,
   },
   checkbox: {
@@ -293,7 +294,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#CCCCCC',
+    borderColor: ink.borderInk,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -324,11 +325,10 @@ const styles = StyleSheet.create({
   nextButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
   },
   nextButtonTextDisabled: {
-    color: '#999999',
+    color: '#1A1A22',
   },
 });
 

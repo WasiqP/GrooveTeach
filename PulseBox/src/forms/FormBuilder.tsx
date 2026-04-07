@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { theme } from '../theme';
 import FormDetailsModal from '../components/FormDetailsModal';
 import { useForms, FormData } from '../context/FormsContext';
+import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FormBuilder'>;
 
@@ -49,7 +50,7 @@ const FormBuilder: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <PulseScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <Text style={styles.title}>Publish Form</Text>
           <Text style={styles.subtitle}>This is where you'll build your form</Text>
@@ -102,7 +103,7 @@ const FormBuilder: React.FC<Props> = ({ navigation, route }) => {
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </PulseScrollView>
 
       <FormDetailsModal
         visible={showModal}
@@ -130,14 +131,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginBottom: 32,
   },
   previewContainer: {
@@ -146,14 +147,14 @@ const styles = StyleSheet.create({
   previewTitle: {
     fontSize: 24,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 6,
   },
   previewSubtitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#999999',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginBottom: 24,
   },
   questionCard: {
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
   questionNumber: {
     fontSize: 12,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: theme.primary,
     backgroundColor: '#F0F0FF',
     paddingHorizontal: 10,
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
   questionTitle: {
     fontSize: 15,
     fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#333333',
     lineHeight: 22,
     marginBottom: 12,
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 13,
     fontWeight: '500',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: theme.primary,
   },
   backButton: {
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
   },
   cancelButton: {
     backgroundColor: "white",
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
   },
 });
 

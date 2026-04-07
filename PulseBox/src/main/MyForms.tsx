@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, Modal, TouchableWithoutFeedback, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Animated, Modal, TouchableWithoutFeedback, Dimensions, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
+import { PulseScrollView } from '../components/PulseScrollView';
 import Svg, { Path } from 'react-native-svg';
 import { useForms } from '../context/FormsContext';
 import FormIcon from '../components/FormIcons';
 import { PanResponder } from 'react-native';
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
+import BackButton from '../components/Reusable-Components/BackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyForms'>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -33,7 +35,7 @@ const AnimatedTrashIcon = ({ size = 24, scaleValue }: { size?: number; scaleValu
 
 // Plus Icon Component
 const PlusIcon = ({ size = 24, color = '#FFFFFF' }) => (
-  <Text style={{ fontSize: size, color: color, fontWeight: '300', fontFamily: 'Poppins-Light' }}>+</Text>
+  <Text style={{ fontSize: size, color: color, fontWeight: '300', fontFamily: 'DMSans-Regular' }}>+</Text>
 );
 
 interface FormItemProps {
@@ -177,7 +179,7 @@ const FormItem = ({ form, onDelete, onDragStart, onDragEnd, navigation }: FormIt
         {...panResponder.panHandlers}
       >
       <View style={styles.iconPlaceholder}>
-        <FormIcon iconId={form.iconId} size={20} color="#999999" />
+        <FormIcon iconId={form.iconId} size={20} color="#1A1A22" />
       </View>
       <View style={styles.textPlaceholder}>
         <Text style={styles.placeholderLine1}>{form.name}</Text>
@@ -248,7 +250,15 @@ const MyForms: React.FC<Props> = ({ navigation, route }) => {
       {/* Header Section - Behind forms */}
       <View style={[styles.header, styles.headerBehind]}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Your Forms</Text>
+          <BackButton
+            onPress={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+            }}
+            style={!navigation.canGoBack() ? styles.backMuted : undefined}
+          />
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.title}>Your Forms</Text>
+          </View>
           <View style={styles.deleteSection}>
             <AnimatedTrashIcon size={24} scaleValue={trashScale} />
           </View>
@@ -258,7 +268,7 @@ const MyForms: React.FC<Props> = ({ navigation, route }) => {
       
       <View style={styles.content}>
         {/* Forms List - Above header */}
-        <ScrollView 
+        <PulseScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews={false}
@@ -284,7 +294,7 @@ const MyForms: React.FC<Props> = ({ navigation, route }) => {
               </Pressable>
             ))
           )}
-        </ScrollView>
+        </PulseScrollView>
       </View>
       
       {/* Success Modal */}
@@ -329,14 +339,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     overflow: 'visible',
-    paddingTop: 200, // Space for header
+    paddingTop: 212,
   },
   header: {
     marginBottom: 30,
   },
   headerBehind: {
     position: 'absolute',
-    top: 80,
+    top: 92,
     left: 30,
     right: 30,
     zIndex: 1,
@@ -345,18 +355,27 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  headerTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+    paddingLeft: 4,
+    paddingRight: 8,
+  },
+  backMuted: {
+    opacity: 0.32,
   },
   title: {
     fontSize: 40,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   subtitle: {
     fontSize: 18,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
     lineHeight: 24,
   },
@@ -391,14 +410,14 @@ const styles = StyleSheet.create({
   },
   placeholderLine1: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     marginBottom: 4,
   },
   placeholderLine2: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
   },
   plusContainer: {
     alignItems: 'center',
@@ -414,14 +433,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     marginBottom: 4,
   },
   emptySubtitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     textAlign: 'center',
     paddingHorizontal: 40,
   },
@@ -449,14 +468,14 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 8,
   },
   modalMessage: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
     textAlign: 'center',
   },
 });

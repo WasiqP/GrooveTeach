@@ -1,6 +1,6 @@
 import React from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App.tsx';
+import type { RootStackParamList } from '../types/navigation';
 import OnboardingCard from './../components/OnboardingCard';
 import { Image } from 'react-native';
 
@@ -18,8 +18,8 @@ const Onboarding03: React.FC<Props> = ({ navigation }) => {
   return (
     <OnboardingCard
       Illustration={Onboarding3Illustration}
-      title="Share & Collect Responses"
-      description="Generate shareable links for your forms and start collecting valuable feedback from clients. Track responses and grow your business with data-driven insights."
+      title="Track what matters"
+      description="Mark attendance, follow class activity, and keep your teaching week organized—from one clear dashboard on your phone."
       step={3}
       total={3}
       onNext={() => navigation.replace('SignUp')}

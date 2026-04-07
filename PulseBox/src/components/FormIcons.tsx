@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
+import { ink } from '../theme/typography';
 
 interface FormIconProps {
   iconId: string;
@@ -7,8 +8,8 @@ interface FormIconProps {
   color?: string;
 }
 
-const FormIcon: React.FC<FormIconProps> = ({ iconId, size = 28, color = '#666' }) => {
-  const icons: { [key: string]: JSX.Element } = {
+const FormIcon: React.FC<FormIconProps> = ({ iconId, size = 28, color = ink.inkSoft }) => {
+  const icons: { [key: string]: React.ReactElement } = {
     clipboard: (
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <Path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

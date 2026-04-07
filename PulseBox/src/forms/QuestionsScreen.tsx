@@ -3,7 +3,6 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  ScrollView, 
   TextInput, 
   Pressable, 
   Switch,
@@ -16,7 +15,9 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
+import { ink } from '../theme/typography';
 import { useForms } from '../context/FormsContext';
+import { PulseScrollView } from '../components/PulseScrollView';
 import BackIcon from '../../assets/images/Back.svg';
 import ImageIcon from '../../assets/images/image.svg';
 import RazerAudioIcon from '../../assets/images/razer-audio.svg';
@@ -272,7 +273,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
         </Pressable>
       </View>
 
-      <ScrollView 
+      <PulseScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -283,7 +284,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
           <TextInput
             style={styles.textInput}
             placeholder="Enter your question..."
-            placeholderTextColor="#999"
+            placeholderTextColor={ink.placeholder}
             value={questionData.title}
             onChangeText={(text) => setQuestionData(prev => ({ ...prev, title: text }))}
             multiline
@@ -314,7 +315,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
           <TextInput
             style={[styles.textInput, styles.textArea]}
             placeholder="Add a helpful description or hint..."
-            placeholderTextColor="#999"
+            placeholderTextColor={ink.placeholder}
             value={questionData.description}
             onChangeText={(text) => setQuestionData(prev => ({ ...prev, description: text }))}
             multiline
@@ -329,7 +330,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
             <TextInput
               style={styles.textInput}
               placeholder="Enter placeholder text..."
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={questionData.placeholder}
               onChangeText={(text) => setQuestionData(prev => ({ ...prev, placeholder: text }))}
             />
@@ -383,7 +384,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
               <TextInput
                 style={styles.optionInput}
                 placeholder="Add option..."
-                placeholderTextColor="#999"
+                placeholderTextColor={ink.placeholder}
                 value={newOption}
                 onChangeText={setNewOption}
                 onSubmitEditing={addOption}
@@ -406,7 +407,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
             <TextInput
               style={styles.textInput}
               placeholder="e.g., 500"
-              placeholderTextColor="#999"
+              placeholderTextColor={ink.placeholder}
               value={questionData.maxLength?.toString() || ''}
               onChangeText={(text) => {
                 const num = parseInt(text, 10);
@@ -459,7 +460,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
                 <TextInput
                   style={styles.numberInput}
                   placeholder="Min"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={ink.placeholder}
                   value={questionData.min?.toString() || ''}
                   onChangeText={(text) => {
                     const num = parseFloat(text);
@@ -477,7 +478,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
                 <TextInput
                   style={styles.numberInput}
                   placeholder="Max"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={ink.placeholder}
                   value={questionData.max?.toString() || ''}
                   onChangeText={(text) => {
                     const num = parseFloat(text);
@@ -495,7 +496,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
                 <TextInput
                   style={styles.numberInput}
                   placeholder="1"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={ink.placeholder}
                   value={questionData.step?.toString() || ''}
                   onChangeText={(text) => {
                     const num = parseFloat(text);
@@ -547,7 +548,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
                 <TextInput
                   style={styles.textInput}
                   placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={ink.placeholder}
                   value={questionData.minDate || ''}
                   onChangeText={(text) => setQuestionData(prev => ({ ...prev, minDate: text }))}
                 />
@@ -558,7 +559,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
                 <TextInput
                   style={styles.textInput}
                   placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={ink.placeholder}
                   value={questionData.maxDate || ''}
                   onChangeText={(text) => setQuestionData(prev => ({ ...prev, maxDate: text }))}
                 />
@@ -637,7 +638,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
         >
           <Text style={styles.saveBtnText}>Save Question</Text>
         </Pressable>
-      </ScrollView>
+      </PulseScrollView>
 
       {/* Question Type Modal */}
       <Modal
@@ -651,7 +652,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>Select Question Type</Text>
-                <ScrollView 
+                <PulseScrollView 
                   style={styles.typeList}
                   showsVerticalScrollIndicator={true}
                 >
@@ -732,7 +733,7 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
                       )}
                     </Pressable>
                   ))}
-                </ScrollView>
+                </PulseScrollView>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -773,7 +774,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 16,
     fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
   },
   saveHeaderBtn: {
@@ -782,7 +783,7 @@ const styles = StyleSheet.create({
   },
   saveHeaderText: {
     fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#A060FF',
   },
   scrollView: {
@@ -797,7 +798,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
     marginBottom: 10,
   },
@@ -809,7 +810,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
     minHeight: 48,
   },
@@ -835,7 +836,7 @@ const styles = StyleSheet.create({
   },
   typeSelectorText: {
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     marginLeft: 12,
   },
@@ -848,8 +849,8 @@ const styles = StyleSheet.create({
   },
   correctAnswerHint: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666',
+    fontFamily: 'DMSans-Regular',
+    color: ink.inkSoft,
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -898,11 +899,11 @@ const styles = StyleSheet.create({
   optionText: {
     flex: 1,
     fontSize: 15,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
   },
   optionTextCorrect: {
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#2E7D32',
   },
   removeOptionBtn: {
@@ -932,7 +933,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
   },
   addOptionBtn: {
@@ -944,7 +945,7 @@ const styles = StyleSheet.create({
   },
   addOptionText: {
     fontSize: 15,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   settingRow: {
@@ -964,14 +965,14 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     marginBottom: 4,
   },
   settingDesc: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666',
+    fontFamily: 'DMSans-Regular',
+    color: ink.inkSoft,
   },
   mediaBtn: {
     flexDirection: 'row',
@@ -990,14 +991,14 @@ const styles = StyleSheet.create({
   },
   mediaLabel: {
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     marginBottom: 4,
   },
   mediaDesc: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666',
+    fontFamily: 'DMSans-Regular',
+    color: ink.inkSoft,
   },
   mediaCheck: {
     fontSize: 20,
@@ -1013,7 +1014,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#FFFFFF',
   },
   modalOverlay: {
@@ -1038,7 +1039,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Outfit-Bold',
     color: '#000000',
     textAlign: 'center',
     marginBottom: 16,
@@ -1068,11 +1069,11 @@ const styles = StyleSheet.create({
   typeOptionLabel: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
   },
   typeOptionLabelSelected: {
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
   },
   typeOptionCheck: {
@@ -1101,7 +1102,7 @@ const styles = StyleSheet.create({
   },
   ratingOptionText: {
     fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'DMSans-SemiBold',
     color: '#000000',
   },
   ratingOptionTextSelected: {
@@ -1109,8 +1110,8 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666',
+    fontFamily: 'DMSans-Regular',
+    color: ink.inkSoft,
     marginTop: 8,
   },
   numberRow: {
@@ -1123,7 +1124,7 @@ const styles = StyleSheet.create({
   },
   numberLabel: {
     fontSize: 12,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
     marginBottom: 8,
   },
@@ -1135,7 +1136,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#000000',
     minHeight: 48,
   },
@@ -1159,7 +1160,7 @@ const styles = StyleSheet.create({
   },
   dateFormatOptionText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#000000',
   },
   dateFormatOptionTextSelected: {
@@ -1181,7 +1182,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'DMSans-Regular',
     color: '#333',
     lineHeight: 20,
   },

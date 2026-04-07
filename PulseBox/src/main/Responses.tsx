@@ -1,12 +1,22 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Modal, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
+import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
+import { PulseScrollView } from '../components/PulseScrollView';
+import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
 import { useForms } from '../context/FormsContext';
-import { theme } from '../theme/Colors';
-import BackIcon from '../../assets/images/Back.svg';
+import { theme, fonts as F, ink, radius } from '../theme';
+
+const CANVAS = ink.canvas;
+const INK = ink.ink;
+const INK_SOFT = ink.inkSoft;
+const BORDER_INK = ink.borderInk;
+const BORDER_WIDTH = ink.borderWidth;
+const ROW_DIVIDER = ink.rowDivider;
+const R_CARD = radius.card;
+const R_INPUT = radius.input;
 import ShareIcon from '../../assets/images/share.svg';
 import TrashIcon from '../../assets/images/trash.svg';
 import StatsIcon from '../../assets/images/stats.svg';
@@ -184,28 +194,32 @@ const Responses: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
+      <TabScreenHeaderBar
+        navigation={navigation}
+        right={
+          <Pressable
+            style={styles.filterBtn}
+            onPress={() => setShowFilterModal(true)}
+            android_ripple={{ color: 'rgba(160,96,255,0.12)', borderless: true }}
+          >
+            <StatsIcon width={24} height={24} stroke={theme.primary} />
+          </Pressable>
+        }
+      >
+        <View>
           <Text style={styles.title}>Responses</Text>
           <Text style={styles.subtitle}>
             {filteredResponses.length} {filteredResponses.length === 1 ? 'response' : 'responses'}
           </Text>
         </View>
-        <Pressable
-          style={styles.filterBtn}
-          onPress={() => setShowFilterModal(true)}
-          android_ripple={{ color: 'rgba(160,96,255,0.12)', borderless: true }}
-        >
-          <StatsIcon width={24} height={24} stroke={theme.primary} />
-        </Pressable>
-      </View>
+      </TabScreenHeaderBar>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="Search responses..."
-          placeholderTextColor="#999"
+          placeholderTextColor={ink.placeholder}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -259,14 +273,14 @@ const Responses: React.FC<Props> = ({ navigation }) => {
       </View>
 
       {/* Responses List */}
-      <ScrollView
+      <PulseScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {filteredResponses.length === 0 ? (
           <View style={styles.emptyState}>
-            <StatsIcon width={64} height={64} stroke="#CCCCCC" />
+            <StatsIcon width={64} height={64} stroke={ink.iconMuted} />
             <Text style={styles.emptyTitle}>
               {searchQuery ? 'No responses found' : filter === 'archived' ? 'No archived responses' : 'No responses yet'}
             </Text>
@@ -283,7 +297,7 @@ const Responses: React.FC<Props> = ({ navigation }) => {
             <ResponseCard key={response.id} response={response} />
           ))
         )}
-      </ScrollView>
+      </PulseScrollView>
 
       {/* Filter Modal */}
       <Modal
@@ -323,89 +337,80 @@ const Responses: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerLeft: {
-    flex: 1,
+    backgroundColor: CANVAS,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
-    color: '#000000',
-    marginBottom: 4,
+    lineHeight: 38,
+    fontFamily: F.outfitBlack,
+    color: INK,
+    letterSpacing: -0.8,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    lineHeight: 19,
+    fontFamily: F.dmMedium,
+    color: INK_SOFT,
   },
   filterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
   },
   searchContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
+    backgroundColor: CANVAS,
   },
   searchInput: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    borderRadius: R_INPUT,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#000000',
+    paddingVertical: 14,
+    fontSize: 15,
+    fontFamily: F.dmRegular,
+    color: INK,
   },
   filterTabs: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 16,
     gap: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: CANVAS,
   },
   filterTab: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   filterTabActive: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
+    backgroundColor: INK,
+    borderColor: INK,
   },
   filterTabText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: '#666666',
+    fontFamily: F.dmMedium,
+    color: INK_SOFT,
   },
   filterTabTextActive: {
-    color: '#FFFFFF',
+    color: CANVAS,
   },
   badge: {
     backgroundColor: theme.primary,
@@ -418,29 +423,29 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#FFFFFF',
+    fontFamily: F.dmSemi,
+    color: theme.white,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 100,
   },
   responseCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    borderRadius: R_CARD,
     padding: 16,
     marginBottom: 12,
   },
   responseCardUnread: {
     borderLeftWidth: 4,
     borderLeftColor: theme.primary,
-    backgroundColor: '#F8F5FF',
+    backgroundColor: 'rgba(160, 96, 255, 0.06)',
   },
   unreadDot: {
     width: 8,
@@ -464,16 +469,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   responseFormName: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
-    color: '#000000',
-    marginBottom: 4,
+    fontSize: 17,
+    lineHeight: 22,
+    fontFamily: F.dmBold,
+    color: INK,
+    marginBottom: 3,
   },
   responseDate: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
   },
   responseActions: {
     flexDirection: 'row',
@@ -485,20 +491,22 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
   },
   actionIcon: {
     fontSize: 18,
-    color: '#CCCCCC',
+    color: INK_SOFT,
   },
   actionIconActive: {
     color: theme.primary,
   },
   responsePreview: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
-    lineHeight: 20,
+    lineHeight: 19,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
     marginBottom: 12,
   },
   responseFooter: {
@@ -506,8 +514,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: ROW_DIVIDER,
   },
   responseFooterLeft: {
     flexDirection: 'row',
@@ -518,8 +526,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   footerActionText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    fontFamily: F.dmSemi,
     color: theme.primary,
   },
   deleteBtn: {
@@ -528,7 +536,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFE5E5',
+    backgroundColor: 'rgba(255, 107, 107, 0.12)',
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
   },
   emptyState: {
     flex: 1,
@@ -537,19 +547,21 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
-    color: '#000000',
+    fontSize: 22,
+    lineHeight: 28,
+    fontFamily: F.outfitExtraBold,
+    color: INK,
+    letterSpacing: -0.5,
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   emptySubtitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    fontSize: 16,
+    lineHeight: 23,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 32,
   },
   modalOverlay: {
     flex: 1,
@@ -558,37 +570,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#000000',
+    backgroundColor: CANVAS,
+    borderRadius: R_CARD,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
     padding: 24,
     width: '80%',
     maxWidth: 400,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Poppins-Bold',
-    color: '#000000',
+    fontSize: 22,
+    lineHeight: 28,
+    fontFamily: F.outfitExtraBold,
+    color: INK,
+    letterSpacing: -0.5,
     marginBottom: 8,
   },
   modalSubtitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    lineHeight: 20,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
     marginBottom: 24,
   },
   modalCloseBtn: {
-    backgroundColor: '#000000',
-    borderRadius: 12,
-    paddingVertical: 12,
+    backgroundColor: INK,
+    borderRadius: radius.btn,
+    paddingVertical: 14,
     alignItems: 'center',
   },
   modalCloseText: {
     fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#FFFFFF',
+    fontFamily: F.outfitBold,
+    color: theme.white,
   },
 });
 

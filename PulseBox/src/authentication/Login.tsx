@@ -1,71 +1,196 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
-import { theme } from '../theme';
+import type { RootStackParamList } from '../types/navigation';
+import { theme, fonts as F, ink, radius } from '../theme';
+import BackButton from '../components/Reusable-Components/BackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const Login: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('GetStarted');
+    }
+  };
+
   return (
-    <View style={styles.screen}>
-      <View style={styles.brandRow}><Text style={styles.brand}><Text style={styles.brandPulse}>Pulse</Text><Text style={styles.brandBox}>Box</Text></Text></View>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+      <BackButton onPress={handleBack} style={styles.backBtn} />
+      <View style={styles.brandRow}>
+        <Image
+          source={require('../../assets/images/logo-transparent.png')}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel="App logo"
+        />
+      </View>
       <View style={styles.content}>
-        {/* <Text style={styles.sub}>Welcome Back</Text> */}
-        <Text style={styles.heading}>Welcome Back!</Text>
+        <Text style={styles.heading}>Welcome back</Text>
+        <Text style={styles.subtitle}>
+          Sign in to access your classes, quizzes, and attendance in one place.
+        </Text>
         <TextInput
           value={email}
-            onChangeText={setEmail}
-            placeholder="Enter your email"
-            placeholderTextColor={theme.textDim}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
+          onChangeText={setEmail}
+          placeholder="Enter your email"
+          placeholderTextColor={ink.inkSoft}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          style={[styles.input, styles.inputFirst]}
         />
         <TextInput
           value={password}
-            onChangeText={setPassword}
-            placeholder="Enter your password"
-            placeholderTextColor={theme.textDim}
-            secureTextEntry
-            style={styles.input}
+          onChangeText={setPassword}
+          placeholder="Enter your password"
+          placeholderTextColor={ink.inkSoft}
+          secureTextEntry
+          style={styles.input}
         />
-        <Pressable style={styles.primaryBtn} android_ripple={{ color: 'rgba(255,255,255,0.15)' }} onPress={() => navigation.replace('Home')}>
+        <Pressable
+          style={styles.primaryBtn}
+          android_ripple={{ color: theme.rippleLight }}
+          onPress={() => navigation.replace('Home')}
+        >
           <Text style={styles.primaryLabel}>Log In</Text>
         </Pressable>
-        <Pressable onPress={() => {}} hitSlop={8}><Text style={styles.forgot}>Forgot Password?</Text></Pressable>
-        <Text style={styles.socialHint}>Log In with socials</Text>
+        <Pressable onPress={() => {}} hitSlop={8}>
+          <Text style={styles.forgot}>Forgot password?</Text>
+        </Pressable>
+        <Pressable onPress={() => navigation.navigate('SignUp')} hitSlop={8}>
+          <Text style={styles.alt}>
+            {"Don't have an account? "}
+            <Text style={styles.altLink}>Sign Up</Text>
+          </Text>
+        </Pressable>
+        <Text style={styles.socialHint}>Log in with socials</Text>
         <View style={styles.socialRow}>
-          <Pressable style={styles.socialBtn} android_ripple={{ color: 'rgba(255,255,255,0.15)' }}><Text style={styles.socialText}>G</Text></Pressable>
-          <Pressable style={styles.socialBtn} android_ripple={{ color: 'rgba(255,255,255,0.15)' }}><Text style={styles.socialText}>f</Text></Pressable>
+          <Pressable style={styles.socialBtn} android_ripple={{ color: 'rgba(255,255,255,0.15)' }}>
+            <Text style={styles.socialText}>G</Text>
+          </Pressable>
+          <Pressable style={styles.socialBtn} android_ripple={{ color: 'rgba(255,255,255,0.15)' }}>
+            <Text style={styles.socialText}>f</Text>
+          </Pressable>
         </View>
-        <Pressable onPress={() => navigation.navigate('SignUp')}><Text style={styles.alt}>Don't have an account? <Text style={styles.altLink}>Sign Up</Text></Text></Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: theme.background, paddingHorizontal: 32, paddingTop: 42 },
-  brandRow: { marginBottom: 40 },
-  brand: { fontSize: 28, fontWeight: '800', fontFamily: 'Poppins-Bold' },
-  brandPulse: { color: theme.text },
-  brandBox: { color: theme.primary },
+  screen: {
+    flex: 1,
+    backgroundColor: ink.canvas,
+    paddingHorizontal: 28,
+    paddingTop: 0,
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 2,
+  },
+  brandRow: {
+    alignItems: 'center',
+    marginTop: -8,
+    marginBottom: 4,
+  },
+  logo: { width: 172, height: 146, maxWidth: '100%' },
   content: { flex: 1 },
-  sub: { fontSize: 18, fontFamily: 'Poppins-Regular', color: theme.text },
-  heading: { fontSize: 64, fontWeight: '800', fontFamily: 'Poppins-Bold', color: theme.text, marginVertical: 12, lineHeight: 62, letterSpacing: -1 },
-  input: { width: '100%', borderWidth: 1.5, borderColor: theme.primary, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 14, fontSize: 14, fontFamily: 'Poppins-Regular', color: theme.text, marginTop: 14 },
-  primaryBtn: { marginTop: 28, backgroundColor: theme.primary, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
-  primaryLabel: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Poppins-Medium', fontWeight: '600' },
-  forgot: { marginTop: 12, fontSize: 11, fontFamily: 'Poppins-Regular', color: theme.textDim, textAlign: 'center' },
-  socialHint: { marginTop: 28, fontSize: 12, textAlign: 'center', color: theme.textDim, fontFamily: 'Poppins-Regular' },
-  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 26, marginTop: 14 },
-  socialBtn: { backgroundColor: theme.text, width: 110, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
-  socialText: { color: '#FFF', fontSize: 20, fontWeight: '700' },
-  alt: { marginTop: 36, fontSize: 13, textAlign: 'center', color: theme.textDim, fontFamily: 'Poppins-Regular' },
-  altLink: { color: theme.primary, fontFamily: 'Poppins-Medium' },
+  heading: {
+    fontSize: 36,
+    lineHeight: 40,
+    fontFamily: F.outfitBlack,
+    color: ink.ink,
+    marginTop: 4,
+    marginBottom: 10,
+    letterSpacing: -0.8,
+  },
+  subtitle: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: F.dmRegular,
+    color: ink.inkSoft,
+    marginBottom: 22,
+    maxWidth: 360,
+  },
+  input: {
+    width: '100%',
+    borderWidth: ink.borderWidth,
+    borderColor: ink.borderInk,
+    borderRadius: radius.input,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    fontFamily: F.dmRegular,
+    color: ink.ink,
+    marginTop: 12,
+    backgroundColor: ink.canvas,
+  },
+  inputFirst: {
+    marginTop: 0,
+  },
+  primaryBtn: {
+    marginTop: 26,
+    backgroundColor: theme.primary,
+    paddingVertical: 16,
+    borderRadius: radius.btn,
+    alignItems: 'center',
+  },
+  primaryLabel: {
+    color: theme.white,
+    fontSize: 17,
+    fontFamily: F.outfitBold,
+  },
+  forgot: {
+    marginTop: 14,
+    fontSize: 13,
+    fontFamily: F.dmMedium,
+    color: ink.inkSoft,
+    textAlign: 'center',
+  },
+  alt: {
+    marginTop: 16,
+    fontSize: 14,
+    textAlign: 'center',
+    color: ink.inkSoft,
+    fontFamily: F.dmRegular,
+  },
+  socialHint: {
+    marginTop: 26,
+    fontSize: 13,
+    textAlign: 'center',
+    color: ink.inkSoft,
+    fontFamily: F.dmMedium,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 14,
+  },
+  socialBtn: {
+    backgroundColor: ink.borderInk,
+    width: 110,
+    paddingVertical: 14,
+    borderRadius: radius.btn,
+    alignItems: 'center',
+    borderWidth: ink.borderWidth,
+    borderColor: ink.borderInk,
+  },
+  socialText: {
+    color: theme.white,
+    fontSize: 18,
+    fontFamily: F.dmBold,
+  },
+  altLink: {
+    color: theme.primary,
+    fontFamily: F.outfitBold,
+  },
 });
 
 export default Login;
