@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,8 @@ import {
   Pressable,
   Platform,
   Image,
-  Animated,
-  Easing,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { theme, fonts as F, ink } from '../theme';
@@ -20,69 +16,6 @@ import { PulseScrollView } from '../components/PulseScrollView';
 type Props = NativeStackScreenProps<RootStackParamList, 'GetStarted'>;
 
 const GetStarted: React.FC<Props> = ({ navigation }) => {
-  const flyY = useRef(new Animated.Value(0)).current;
-  const flyScale = useRef(new Animated.Value(1)).current;
-  const flyOpacity = useRef(new Animated.Value(1)).current;
-  const animatingRef = useRef(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const resetLogoMotion = useCallback(() => {
-    flyY.setValue(0);
-    flyScale.setValue(1);
-    flyOpacity.setValue(1);
-    animatingRef.current = false;
-    setIsAnimating(false);
-  }, [flyY, flyScale, flyOpacity]);
-
-  useFocusEffect(
-    useCallback(() => {
-      resetLogoMotion();
-    }, [resetLogoMotion]),
-  );
-
-  const flyLogoThenNavigateToLogin = () => {
-    if (animatingRef.current) return;
-    animatingRef.current = true;
-    setIsAnimating(true);
-
-    const up = -Math.min(Dimensions.get('window').height * 0.42, 320);
-
-    Animated.parallel([
-      Animated.timing(flyY, {
-        toValue: up,
-        duration: 520,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(flyScale, {
-        toValue: 1.14,
-        duration: 520,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.delay(180),
-        Animated.timing(flyOpacity, {
-          toValue: 0,
-          duration: 340,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start(({ finished }) => {
-      if (!finished) {
-        resetLogoMotion();
-      }
-    });
-
-    navigation.navigate('Login');
-  };
-
-  const logoMotion = {
-    transform: [{ translateY: flyY }, { scale: flyScale }],
-    opacity: flyOpacity,
-  };
-
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <PulseScrollView
@@ -90,17 +23,16 @@ const GetStarted: React.FC<Props> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         bounces={false}
         keyboardShouldPersistTaps="handled"
-        scrollEnabled={!isAnimating}
       >
         <View style={styles.hero}>
           <View style={styles.illustrationWrap}>
-            <Animated.View style={[styles.logoAnimated, logoMotion]}>
+            <View style={styles.logoWrap}>
               <Image
                 source={require('../../assets/images/logo-transparent.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
-            </Animated.View>
+            </View>
           </View>
           <Text style={styles.eyebrow}>Welcome to GrooveBox</Text>
 
@@ -119,26 +51,16 @@ const GetStarted: React.FC<Props> = ({ navigation }) => {
 
         <View style={styles.buttonZone}>
           <Pressable
-            style={({ pressed }) => [
-              styles.primaryBtn,
-              pressed && styles.pressed,
-              isAnimating && styles.btnDisabled,
-            ]}
+            style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
             android_ripple={{ color: theme.rippleLight }}
-            disabled={isAnimating}
             onPress={() => navigation.navigate('Onboarding01')}
           >
             <Text style={styles.primaryLabel}>Get Started</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [
-              styles.secondaryBtn,
-              pressed && styles.pressed,
-              isAnimating && styles.btnDisabled,
-            ]}
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
             android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
-            disabled={isAnimating}
-            onPress={flyLogoThenNavigateToLogin}
+            onPress={() => navigation.navigate('Login')}
           >
             <Text style={styles.secondaryLabel}>Log In</Text>
           </Pressable>
@@ -169,7 +91,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     zIndex: 2,
   },
-  logoAnimated: {
+  logoWrap: {
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -177,9 +99,6 @@ const styles = StyleSheet.create({
     width: 280,
     height: 248,
     maxWidth: '100%',
-  },
-  btnDisabled: {
-    opacity: 0.55,
   },
   hero: {
     alignSelf: 'flex-start',

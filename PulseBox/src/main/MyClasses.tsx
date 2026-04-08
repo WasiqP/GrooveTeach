@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
 import Svg, { Path } from 'react-native-svg';
-import { useClasses } from '../context/ClassesContext';
+import { useClasses, type ClassData } from '../context/ClassesContext';
+import { usePulseAlert } from '../context/AlertModalContext';
 import { theme, fonts as F, ink, radius } from '../theme';
 import { PulseScrollView } from '../components/PulseScrollView';
 import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MyClasses'>;
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+  embedded?: boolean;
+};
 
 const CANVAS = ink.canvas;
 const INK = ink.ink;
@@ -39,6 +43,19 @@ const StudentsIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color
   </Svg>
 );
 
+const TrashIcon = ({ size = 20, color = '#DC2626' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path d="M10 11v6M14 11v6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
+
 const CalendarIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -48,9 +65,28 @@ const CalendarIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color
   </Svg>
 );
 
-const MyClasses: React.FC<Props> = ({ navigation }) => {
-  const { classes } = useClasses();
+const MyClasses: React.FC<Props> = ({ navigation, embedded }) => {
+  const { classes, deleteClass } = useClasses();
+  const { showAlert } = usePulseAlert();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const confirmDeleteClass = (classItem: ClassData) => {
+    showAlert({
+      variant: 'warning',
+      title: 'Delete class?',
+      message: `“${classItem.name}” will be removed. This cannot be undone.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void deleteClass(classItem.id);
+          },
+        },
+      ],
+    });
+  };
 
   const filteredClasses = classes.filter(cls =>
     cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -124,16 +160,30 @@ const MyClasses: React.FC<Props> = ({ navigation }) => {
                 <BookIcon size={24} color={theme.primary} />
               </View>
               <View style={styles.classContent}>
-                <Text style={styles.className}>{classItem.name}</Text>
-                <Text style={styles.classSubject}>{classItem.subject} • {classItem.gradeLevel}</Text>
+                <Text style={styles.className} numberOfLines={2} ellipsizeMode="tail">
+                  {classItem.name}
+                </Text>
+                <Text style={styles.classSubject} numberOfLines={2} ellipsizeMode="tail">
+                  {classItem.subject} • {classItem.gradeLevel}
+                </Text>
                 <View style={styles.classInfo}>
-                  <View style={styles.infoItem}>
+                  <View style={styles.infoRow}>
                     <StudentsIcon size={16} color={ink.inkSoft} />
-                    <Text style={styles.infoText}>{classItem.studentCount} students</Text>
+                    <Text style={styles.infoText} numberOfLines={1}>
+                      {classItem.studentCount} students
+                    </Text>
                   </View>
-                  <View style={styles.infoItem}>
+                  <View style={styles.scheduleRow}>
                     <CalendarIcon size={16} color={ink.inkSoft} />
-                    <Text style={styles.infoText}>{classItem.schedule}</Text>
+                    <View style={styles.scheduleTextWrap}>
+                      <Text
+                        style={styles.infoText}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {classItem.schedule}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -148,13 +198,24 @@ const MyClasses: React.FC<Props> = ({ navigation }) => {
                 >
                   <Text style={styles.actionEmoji}>✓</Text>
                 </Pressable>
+                <Pressable
+                  style={[styles.actionBtn, styles.actionBtnDanger]}
+                  hitSlop={8}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    confirmDeleteClass(classItem);
+                  }}
+                  android_ripple={{ color: 'rgba(220,38,38,0.12)', borderless: true }}
+                >
+                  <TrashIcon size={18} color="#DC2626" />
+                </Pressable>
               </View>
             </Pressable>
           ))
         )}
       </PulseScrollView>
 
-      <BottomTab navigation={navigation} currentRoute="MyClasses" />
+      {!embedded && <BottomTab navigation={navigation} currentRoute="MyClasses" />}
     </SafeAreaView>
   );
 };
@@ -269,6 +330,7 @@ const styles = StyleSheet.create({
   },
   classContent: {
     flex: 1,
+    minWidth: 0,
   },
   className: {
     fontSize: 17,
@@ -285,13 +347,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   classInfo: {
-    flexDirection: 'row',
-    gap: 16,
+    gap: 6,
+    alignSelf: 'stretch',
   },
-  infoItem: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: '100%',
+  },
+  scheduleTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   infoText: {
     fontSize: 13,
@@ -300,8 +372,9 @@ const styles = StyleSheet.create({
     color: INK_SOFT,
   },
   classActions: {
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   actionBtn: {
     width: 40,
@@ -312,6 +385,10 @@ const styles = StyleSheet.create({
     borderColor: BORDER_INK,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionBtnDanger: {
+    borderColor: 'rgba(220, 38, 38, 0.35)',
+    backgroundColor: 'rgba(220, 38, 38, 0.06)',
   },
   actionEmoji: {
     fontSize: 18,

@@ -8,6 +8,8 @@ const AUTH_FLOW_ROUTE_NAMES = new Set<string>([
   'Onboarding03',
   'Login',
   'SignUp',
+  'ForgotPassword',
+  'VerifyOtp',
 ]);
 
 export function isAuthFlowRoute(name: string | undefined): boolean {

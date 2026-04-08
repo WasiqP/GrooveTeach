@@ -9,7 +9,6 @@ import {
   Animated,
   Modal,
   TouchableWithoutFeedback,
-  Alert,
   Dimensions
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,6 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { ink } from '../theme/typography';
 import { useForms } from '../context/FormsContext';
+import { usePulseAlert } from '../context/AlertModalContext';
 import { PulseScrollView } from '../components/PulseScrollView';
 import BackIcon from '../../assets/images/Back.svg';
 import ImageIcon from '../../assets/images/image.svg';
@@ -111,6 +111,7 @@ const renderQuestionTypeIcon = (type: QuestionType, size: number = 24) => {
 const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
   const { formId, questionId } = route.params;
   const { forms, updateForm } = useForms();
+  const { showAlert } = usePulseAlert();
   const form = forms.find(f => f.id === formId);
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -162,7 +163,11 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const handleSave = async () => {
     if (!questionData.title.trim()) {
-      Alert.alert('Required Field', 'Please enter a question title');
+      showAlert({
+        variant: 'warning',
+        title: 'Required Field',
+        message: 'Please enter a question title',
+      });
       return;
     }
 
@@ -604,7 +609,13 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
           {/* Image Upload */}
           <Pressable 
             style={styles.mediaBtn}
-            onPress={() => Alert.alert('Image Upload', 'Image upload functionality coming soon')}
+            onPress={() =>
+              showAlert({
+                variant: 'info',
+                title: 'Image Upload',
+                message: 'Image upload functionality coming soon.',
+              })
+            }
             android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
           >
             <ImageIcon width={28} height={28} stroke="#000000" />
@@ -618,7 +629,13 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
           {/* Audio Upload */}
           <Pressable 
             style={styles.mediaBtn}
-            onPress={() => Alert.alert('Audio Upload', 'Audio upload functionality coming soon')}
+            onPress={() =>
+              showAlert({
+                variant: 'info',
+                title: 'Audio Upload',
+                message: 'Audio upload functionality coming soon.',
+              })
+            }
             android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
           >
             <RazerAudioIcon width={28} height={28} stroke="#000000" />

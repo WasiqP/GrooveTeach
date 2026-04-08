@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Alert, Platform } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { ink } from '../theme/typography';
-import BackIcon from '../../assets/images/Back.svg';
+import { theme, fonts as F, ink, radius } from '../theme';
+import BackButton from '../components/Reusable-Components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 import { PulseScrollView } from '../components/PulseScrollView';
+import { useClasses, type ClassActivityItem } from '../context/ClassesContext';
+import { usePulseAlert } from '../context/AlertModalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendance'>;
 
@@ -16,33 +18,92 @@ interface Student {
   status: 'present' | 'absent' | 'late' | null;
 }
 
-// Icons
-const CheckIcon = ({ size = 20, color = '#4CAF50' }) => (
+const CANVAS = ink.canvas;
+const INK = ink.ink;
+const INK_SOFT = ink.inkSoft;
+const BORDER_INK = ink.borderInk;
+const BORDER_WIDTH = ink.borderWidth;
+const ROW_DIVIDER = ink.rowDivider;
+const R_CARD = radius.card;
+const R_INPUT = radius.input;
+const R_BTN = radius.btn;
+
+const PRESENT = '#0D9488';
+const PRESENT_BG = 'rgba(13, 148, 136, 0.12)';
+const LATE = '#D97706';
+const LATE_BG = 'rgba(217, 119, 6, 0.12)';
+const ABSENT = '#DC2626';
+const ABSENT_BG = 'rgba(220, 38, 38, 0.1)';
+
+const CheckIcon = ({ size = 18, color = PRESENT }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M20 6L9 17L4 12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M20 6L9 17L4 12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const XIcon = ({ size = 20, color = '#F44336' }) => (
+const XIcon = ({ size = 18, color = ABSENT }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M18 6L6 18M6 6L18 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M18 6L6 18M6 6L18 18"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const ClockIcon = ({ size = 20, color = '#FF9800' }) => (
+const ClockIcon = ({ size = 18, color = LATE }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M12 6V12L16 14" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 6V12L16 14"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const BookIconSmall = ({ size = 22, color = theme.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
 const Attendance: React.FC<Props> = ({ route, navigation }) => {
-  const { classId } = route.params;
   const insets = useSafeAreaInsets();
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const { classes, updateClass } = useClasses();
+  const { showAlert, showSuccess } = usePulseAlert();
+  const [activeClassId, setActiveClassId] = useState<string | undefined>(() => route.params?.classId);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Mock students data - will be replaced with Firebase
+
   const [students, setStudents] = useState<Student[]>([
     { id: '1', name: 'Alice Johnson', status: null },
     { id: '2', name: 'Bob Smith', status: null },
@@ -54,196 +115,321 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
     { id: '8', name: 'Hannah Montana', status: null },
   ]);
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    if (route.params?.classId) {
+      setActiveClassId(route.params.classId);
+    }
+  }, [route.params?.classId]);
+
+  useEffect(() => {
+    if (!activeClassId) return;
+    setSearchQuery('');
+    setStudents((prev) => prev.map((s) => ({ ...s, status: null })));
+  }, [activeClassId]);
+
+  const classInfo = useMemo(
+    () => (activeClassId ? classes.find((c) => c.id === activeClassId) : undefined),
+    [classes, activeClassId],
   );
 
+  const filteredStudents = useMemo(
+    () => students.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    [students, searchQuery],
+  );
+
+  const dateLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    [],
+  );
+
+  const presentCount = students.filter((s) => s.status === 'present').length;
+  const absentCount = students.filter((s) => s.status === 'absent').length;
+  const lateCount = students.filter((s) => s.status === 'late').length;
+  const unmarkedCount = students.filter((s) => s.status === null).length;
+
   const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
-    setStudents(prev =>
-      prev.map(student =>
-        student.id === studentId
-          ? { ...student, status: student.status === status ? null : status }
-          : student
-      )
+    setStudents((prev) =>
+      prev.map((s) =>
+        s.id === studentId ? { ...s, status: s.status === status ? null : status } : s,
+      ),
     );
   };
 
-  const handleSave = () => {
-    const presentCount = students.filter(s => s.status === 'present').length;
-    const absentCount = students.filter(s => s.status === 'absent').length;
-    const lateCount = students.filter(s => s.status === 'late').length;
-    const notMarked = students.filter(s => s.status === null).length;
+  const saveAttendance = (studentSnapshot?: Student[]) => {
+    const roster = studentSnapshot ?? students;
+    const present = roster.filter((s) => s.status === 'present').length;
+    const late = roster.filter((s) => s.status === 'late').length;
+    const absent = roster.filter((s) => s.status === 'absent').length;
 
+    if (activeClassId) {
+      const cls = classes.find((c) => c.id === activeClassId);
+      if (cls) {
+        const item: ClassActivityItem = {
+          id: `act-${Date.now()}`,
+          kind: 'attendance',
+          headline: 'Attendance marked',
+          detail: `${present} present · ${late} late · ${absent} absent`,
+          createdAt: new Date().toISOString(),
+        };
+        void updateClass(activeClassId, {
+          activityLog: [item, ...(cls.activityLog ?? [])].slice(0, 40),
+        });
+      }
+    }
+
+    showSuccess('Saved', 'Attendance has been recorded.', () => navigation.goBack());
+  };
+
+  const handleSave = () => {
+    const notMarked = students.filter((s) => s.status === null).length;
     if (notMarked > 0) {
-      Alert.alert(
-        'Incomplete Attendance',
-        `${notMarked} student(s) not marked. Do you want to mark them as absent?`,
-        [
+      showAlert({
+        variant: 'warning',
+        title: 'Some students unmarked',
+        message: `${notMarked} student(s) have no status. Mark them as absent and save?`,
+        buttons: [
           { text: 'Cancel', style: 'cancel' },
           {
-            text: 'Mark as Absent',
+            text: 'Mark absent & save',
+            style: 'default',
             onPress: () => {
-              setStudents(prev =>
-                prev.map(student =>
-                  student.status === null ? { ...student, status: 'absent' } : student
-                )
+              const finalStudents = students.map((s) =>
+                s.status === null ? { ...s, status: 'absent' as const } : s,
               );
-              saveAttendance();
+              setStudents(finalStudents);
+              saveAttendance(finalStudents);
             },
           },
-        ]
-      );
+        ],
+      });
     } else {
       saveAttendance();
     }
   };
 
-  const saveAttendance = () => {
-    // Save to Firebase here
-    Alert.alert('Success', 'Attendance saved successfully!', [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
-  };
+  if (!activeClassId) {
+    return (
+      <SafeAreaView style={styles.screen} edges={['top']}>
+        <View style={styles.header}>
+          <BackButton onPress={() => navigation.goBack()} />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Which class?</Text>
+            <Text style={styles.pickSub}>
+              Choose a class to take attendance for today.
+            </Text>
+          </View>
+        </View>
 
-  const presentCount = students.filter(s => s.status === 'present').length;
-  const absentCount = students.filter(s => s.status === 'absent').length;
-  const lateCount = students.filter(s => s.status === 'late').length;
+        <PulseScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.pickScrollContent, { paddingBottom: 24 + insets.bottom }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {classes.length === 0 ? (
+            <View style={styles.pickEmpty}>
+              <Text style={styles.pickEmptyTitle}>No classes yet</Text>
+              <Text style={styles.pickEmptyBody}>
+                Add a class first, then you can take attendance for that roster.
+              </Text>
+              <Pressable
+                style={styles.pickPrimaryBtn}
+                onPress={() => navigation.navigate('CreateClass')}
+                android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+              >
+                <Text style={styles.pickPrimaryBtnText}>Create a class</Text>
+              </Pressable>
+            </View>
+          ) : (
+            classes.map((c) => (
+              <Pressable
+                key={c.id}
+                style={({ pressed }) => [styles.pickCard, pressed && styles.pickCardPressed]}
+                onPress={() => setActiveClassId(c.id)}
+                android_ripple={{ color: ink.pressTint }}
+              >
+                <View style={styles.pickIconWell}>
+                  <BookIconSmall size={24} color={theme.primary} />
+                </View>
+                <View style={styles.pickCardMain}>
+                  <Text style={styles.pickCardTitle} numberOfLines={1}>
+                    {c.name}
+                  </Text>
+                  <Text style={styles.pickCardMeta} numberOfLines={2}>
+                    {c.subject} · {c.gradeLevel} · {c.studentCount} students
+                  </Text>
+                  {c.schedule ? (
+                    <Text style={styles.pickCardSchedule} numberOfLines={1}>
+                      {c.schedule}
+                    </Text>
+                  ) : null}
+                </View>
+                <Text style={styles.pickChevron}>›</Text>
+              </Pressable>
+            ))
+          )}
+        </PulseScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Header */}
+    <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.header}>
-        <Pressable
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
-        >
-          <BackIcon width={24} height={24} stroke="#000000" />
-        </Pressable>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Mark Attendance</Text>
-          <Text style={styles.headerDate}>{new Date(date).toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}</Text>
+        <BackButton onPress={() => navigation.goBack()} />
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Mark attendance</Text>
+          <Text style={styles.subDate}>{dateLabel}</Text>
+          {classInfo ? (
+            <Text style={styles.subClass} numberOfLines={1}>
+              {classInfo.name}
+              <Text style={styles.subMeta}> · {classInfo.subject}</Text>
+            </Text>
+          ) : (
+            <Text style={styles.subClass}>Class</Text>
+          )}
+          <Pressable
+            onPress={() => setActiveClassId(undefined)}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Choose a different class"
+          >
+            <Text style={styles.changeClassLink}>Change class</Text>
+          </Pressable>
         </View>
-        <View style={styles.placeholder} />
       </View>
 
-      {/* Stats - Reorganized */}
-      <View style={styles.statsSection}>
-        <Text style={styles.statsTitle}>Today's Summary</Text>
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <View style={styles.statIconContainer}>
-              <CheckIcon size={24} color="#4CAF50" />
-            </View>
-            <Text style={styles.statNumber}>{presentCount}</Text>
-            <Text style={styles.statLabel}>Present</Text>
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryEyebrow}>Today</Text>
+        <View style={styles.summaryGrid}>
+          <View style={[styles.summaryCell, { backgroundColor: PRESENT_BG }]}>
+            <Text style={[styles.summaryNum, { color: PRESENT }]}>{presentCount}</Text>
+            <Text style={styles.summaryLab}>Present</Text>
           </View>
-          <View style={[styles.statCard, styles.statCardAbsent]}>
-            <View style={styles.statIconContainer}>
-              <XIcon size={24} color="#F44336" />
-            </View>
-            <Text style={[styles.statNumber, styles.statNumberAbsent]}>{absentCount}</Text>
-            <Text style={styles.statLabel}>Absent</Text>
+          <View style={[styles.summaryCell, { backgroundColor: LATE_BG }]}>
+            <Text style={[styles.summaryNum, { color: LATE }]}>{lateCount}</Text>
+            <Text style={styles.summaryLab}>Late</Text>
           </View>
-          <View style={[styles.statCard, styles.statCardLate]}>
-            <View style={styles.statIconContainer}>
-              <ClockIcon size={24} color="#FF9800" />
-            </View>
-            <Text style={[styles.statNumber, styles.statNumberLate]}>{lateCount}</Text>
-            <Text style={styles.statLabel}>Late</Text>
+          <View style={[styles.summaryCell, { backgroundColor: ABSENT_BG }]}>
+            <Text style={[styles.summaryNum, { color: ABSENT }]}>{absentCount}</Text>
+            <Text style={styles.summaryLab}>Absent</Text>
+          </View>
+          <View style={[styles.summaryCell, styles.summaryCellMuted]}>
+            <Text style={[styles.summaryNum, { color: INK }]}>{unmarkedCount}</Text>
+            <Text style={styles.summaryLab}>Unmarked</Text>
           </View>
         </View>
       </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
+      <View style={styles.searchWrap}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search students..."
+          placeholder="Search students"
           placeholderTextColor={ink.placeholder}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
 
-      {/* Students List */}
       <PulseScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 108 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
-        nestedScrollEnabled={true}
       >
+        <Text style={styles.listEyebrow}>
+          Roster · {filteredStudents.length} of {students.length}
+        </Text>
         {filteredStudents.map((student) => (
           <View key={student.id} style={styles.studentCard}>
-            <View style={styles.studentInfo}>
-              <View style={styles.studentAvatar}>
-                <Text style={styles.studentInitial}>
-                  {student.name.charAt(0).toUpperCase()}
-                </Text>
+            <View style={styles.studentLeft}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarLetter}>{student.name.charAt(0).toUpperCase()}</Text>
               </View>
-              <Text style={styles.studentName}>{student.name}</Text>
+              <Text style={styles.studentName} numberOfLines={2}>
+                {student.name}
+              </Text>
             </View>
-            <View style={styles.statusButtons}>
+            <View style={styles.segment}>
               <Pressable
+                accessibilityLabel={`${student.name} present`}
                 style={[
-                  styles.statusBtn,
-                  styles.statusBtnPresent,
-                  student.status === 'present' && styles.statusBtnActive,
+                  styles.segBtn,
+                  styles.segLeft,
+                  student.status === 'present' && styles.segActivePresent,
                 ]}
                 onPress={() => handleStatusChange(student.id, 'present')}
-                android_ripple={{ color: 'rgba(76,175,80,0.1)' }}
+                android_ripple={{ color: 'rgba(13,148,136,0.15)' }}
               >
                 <CheckIcon
-                  size={20}
-                  color={student.status === 'present' ? '#FFFFFF' : '#4CAF50'}
+                  size={17}
+                  color={student.status === 'present' ? '#FFFFFF' : PRESENT}
                 />
+                <Text
+                  style={[
+                    styles.segLabel,
+                    student.status === 'present' && styles.segLabelOnLight,
+                  ]}
+                >
+                  Present
+                </Text>
               </Pressable>
+              <View style={styles.segDivider} />
               <Pressable
-                style={[
-                  styles.statusBtn,
-                  styles.statusBtnLate,
-                  student.status === 'late' && styles.statusBtnActiveLate,
-                ]}
+                accessibilityLabel={`${student.name} late`}
+                style={[styles.segBtn, student.status === 'late' && styles.segActiveLate]}
                 onPress={() => handleStatusChange(student.id, 'late')}
-                android_ripple={{ color: 'rgba(255,152,0,0.1)' }}
+                android_ripple={{ color: 'rgba(217,119,6,0.15)' }}
               >
                 <ClockIcon
-                  size={20}
-                  color={student.status === 'late' ? '#FFFFFF' : '#FF9800'}
+                  size={17}
+                  color={student.status === 'late' ? '#FFFFFF' : LATE}
                 />
+                <Text
+                  style={[
+                    styles.segLabel,
+                    student.status === 'late' && styles.segLabelOnLight,
+                  ]}
+                >
+                  Late
+                </Text>
               </Pressable>
+              <View style={styles.segDivider} />
               <Pressable
-                style={[
-                  styles.statusBtn,
-                  styles.statusBtnAbsent,
-                  student.status === 'absent' && styles.statusBtnActiveAbsent,
-                ]}
+                accessibilityLabel={`${student.name} absent`}
+                style={[styles.segBtn, styles.segRight, student.status === 'absent' && styles.segActiveAbsent]}
                 onPress={() => handleStatusChange(student.id, 'absent')}
-                android_ripple={{ color: 'rgba(244,67,54,0.1)' }}
+                android_ripple={{ color: 'rgba(220,38,38,0.12)' }}
               >
                 <XIcon
-                  size={20}
-                  color={student.status === 'absent' ? '#FFFFFF' : '#F44336'}
+                  size={17}
+                  color={student.status === 'absent' ? '#FFFFFF' : ABSENT}
                 />
+                <Text
+                  style={[
+                    styles.segLabel,
+                    student.status === 'absent' && styles.segLabelOnLight,
+                  ]}
+                >
+                  Absent
+                </Text>
               </Pressable>
             </View>
           </View>
         ))}
       </PulseScrollView>
 
-      {/* Save Button - Fixed Footer */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Pressable
-          style={styles.saveBtn}
+          style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
           onPress={handleSave}
           android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
         >
-          <Text style={styles.saveBtnText}>Save Attendance</Text>
+          <Text style={styles.saveBtnText}>Save attendance</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -251,247 +437,326 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: CANVAS,
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ROW_DIVIDER,
+    backgroundColor: CANVAS,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerContent: {
+  headerText: {
     flex: 1,
-    marginLeft: 12,
+    paddingLeft: 4,
+    minWidth: 0,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontFamily: F.outfitBlack,
+    color: INK,
+    letterSpacing: -0.6,
     marginBottom: 4,
   },
-  headerDate: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-  },
-  placeholder: {
-    width: 40,
-  },
-  statsSection: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  statsTitle: {
+  subDate: {
     fontSize: 14,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#1A1A22',
-    marginBottom: 12,
+    fontFamily: F.dmMedium,
+    color: INK_SOFT,
+    marginBottom: 2,
+  },
+  subClass: {
+    fontSize: 15,
+    fontFamily: F.dmSemi,
+    color: INK,
+  },
+  subMeta: {
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+    fontWeight: '400',
+  },
+  summaryCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: R_CARD,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    backgroundColor: CANVAS,
+  },
+  summaryEyebrow: {
+    fontSize: 11,
+    fontFamily: F.dmSemi,
+    color: INK_SOFT,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginBottom: 12,
   },
-  statsContainer: {
+  summaryGrid: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#E8F5E9',
-    borderRadius: 16,
-    padding: 14,
+  summaryCell: {
+    flexGrow: 1,
+    minWidth: '22%',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
   },
-  statCardAbsent: {
-    backgroundColor: '#FFEBEE',
+  summaryCellMuted: {
+    backgroundColor: 'rgba(26, 26, 34, 0.06)',
   },
-  statCardLate: {
-    backgroundColor: '#FFF3E0',
+  summaryNum: {
+    fontSize: 22,
+    lineHeight: 26,
+    fontFamily: F.outfitBold,
+    marginBottom: 2,
   },
-  statIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
+  summaryLab: {
+    fontSize: 11,
+    fontFamily: F.dmMedium,
+    color: INK_SOFT,
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#4CAF50',
-    marginBottom: 4,
-  },
-  statNumberAbsent: {
-    color: '#F44336',
-  },
-  statNumberLate: {
-    color: '#FF9800',
-  },
-  statLabel: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Medium',
-    color: '#1A1A22',
-  },
-  searchContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+  searchWrap: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   searchInput: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
+    backgroundColor: CANVAS,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    borderRadius: R_INPUT,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: 'DMSans-Regular',
-    color: '#000000',
+    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
+    fontSize: 15,
+    fontFamily: F.dmRegular,
+    color: INK,
   },
-  scrollView: {
+  scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 120,
+  },
+  listEyebrow: {
+    fontSize: 11,
+    fontFamily: F.dmSemi,
+    color: INK_SOFT,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 10,
   },
   studentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 16,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    borderRadius: R_CARD,
     padding: 14,
     marginBottom: 10,
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: CANVAS,
   },
-  studentInfo: {
+  studentLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    marginBottom: 12,
   },
-  studentAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#A060FF',
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: theme.primarySoft,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  studentInitial: {
+  avatarLetter: {
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'DMSans-SemiBold',
-    color: '#FFFFFF',
+    fontFamily: F.dmBold,
+    color: theme.primary,
   },
   studentName: {
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
     flex: 1,
+    fontSize: 16,
+    fontFamily: F.dmSemi,
+    color: INK,
   },
-  statusButtons: {
+  segment: {
     flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
+    alignItems: 'stretch',
+    borderRadius: 12,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(26, 26, 34, 0.03)',
   },
-  statusBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  segBtn: {
+    flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    paddingVertical: 10,
+    gap: 4,
   },
-  statusBtnPresent: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#FFFFFF',
+  segLeft: {},
+  segRight: {},
+  segDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: ROW_DIVIDER,
   },
-  statusBtnLate: {
-    borderColor: '#FF9800',
-    backgroundColor: '#FFFFFF',
+  segLabel: {
+    fontSize: 11,
+    fontFamily: F.dmSemi,
+    color: INK_SOFT,
   },
-  statusBtnAbsent: {
-    borderColor: '#F44336',
-    backgroundColor: '#FFFFFF',
+  segLabelOnLight: {
+    color: '#FFFFFF',
   },
-  statusBtnActive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+  segActivePresent: {
+    backgroundColor: PRESENT,
   },
-  statusBtnActiveLate: {
-    backgroundColor: '#FF9800',
-    borderColor: '#FF9800',
+  segActiveLate: {
+    backgroundColor: LATE,
   },
-  statusBtnActiveAbsent: {
-    backgroundColor: '#F44336',
-    borderColor: '#F44336',
+  segActiveAbsent: {
+    backgroundColor: ABSENT,
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingTop: 14,
-    paddingBottom: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: -2 },
-    shadowRadius: 8,
-    elevation: 8,
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: ROW_DIVIDER,
+    backgroundColor: CANVAS,
   },
   saveBtn: {
-    backgroundColor: '#A060FF',
-    borderRadius: 14,
-    paddingVertical: 14,
+    backgroundColor: theme.primary,
+    borderRadius: R_BTN,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#A060FF',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 4,
+  },
+  saveBtnPressed: {
+    opacity: 0.92,
   },
   saveBtnText: {
+    fontSize: 17,
+    fontFamily: F.outfitBold,
+    color: theme.white,
+  },
+  pickSub: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+    marginTop: 4,
+  },
+  pickScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  pickEmpty: {
+    paddingVertical: 32,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  pickEmptyTitle: {
+    fontSize: 20,
+    fontFamily: F.outfitExtraBold,
+    color: INK,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  pickEmptyBody: {
+    fontSize: 15,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+    maxWidth: 300,
+  },
+  pickPrimaryBtn: {
+    backgroundColor: theme.primary,
+    borderRadius: R_BTN,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  pickPrimaryBtnText: {
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'DMSans-SemiBold',
-    color: '#FFFFFF',
+    fontFamily: F.outfitBold,
+    color: theme.white,
+  },
+  pickCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    borderRadius: R_CARD,
+    padding: 14,
+    marginBottom: 10,
+    backgroundColor: CANVAS,
+  },
+  pickCardPressed: {
+    opacity: 0.92,
+  },
+  pickIconWell: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: theme.primarySoft,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  pickCardMain: {
+    flex: 1,
+    minWidth: 0,
+  },
+  pickCardTitle: {
+    fontSize: 17,
+    fontFamily: F.dmSemi,
+    color: INK,
+    marginBottom: 4,
+  },
+  pickCardMeta: {
+    fontSize: 14,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+    lineHeight: 20,
+  },
+  pickCardSchedule: {
+    fontSize: 12,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+    marginTop: 4,
+  },
+  pickChevron: {
+    fontSize: 22,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+    marginLeft: 4,
+  },
+  changeClassLink: {
+    marginTop: 8,
+    fontSize: 14,
+    fontFamily: F.dmSemi,
+    color: theme.primary,
   },
 });
 
 export default Attendance;
-

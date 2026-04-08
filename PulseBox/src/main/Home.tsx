@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../types/navigation';
+import type { MainTabRoute, RootStackParamList } from '../types/navigation';
 import { theme, fonts as F, ink, radius } from '../theme';
 import Svg, { Path, Circle } from 'react-native-svg';
 import BottomTab from '../components/BottomTab';
@@ -17,7 +17,10 @@ import { useClasses } from '../context/ClassesContext';
 import { useForms } from '../context/FormsContext';
 import { useUser } from '../context/UserContext';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Home'> & {
+  embedded?: boolean;
+  onSelectTab?: (tab: MainTabRoute) => void;
+};
 
 const CANVAS = ink.canvas;
 const INK = ink.ink;
@@ -169,7 +172,7 @@ type QuickItem = {
   onPress: () => void;
 };
 
-const Home: React.FC<Props> = ({ navigation }) => {
+const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab }) => {
   const { classes } = useClasses();
   const { forms } = useForms();
   const { firstName } = useUser();
@@ -215,7 +218,7 @@ const Home: React.FC<Props> = ({ navigation }) => {
         title: 'Tasks & quizzes',
         subtitle: 'Build and publish for classes',
         icon: <IconListChecks color={accent} size={22} />,
-        onPress: () => navigation.navigate('Quizzes'),
+        onPress: () => onSelectTab?.('Quizzes'),
       },
       {
         key: 'att',
@@ -224,14 +227,14 @@ const Home: React.FC<Props> = ({ navigation }) => {
         icon: <IconClipboardUser color={accent} size={22} />,
         onPress: () => {
           if (classes.length > 0) {
-            navigation.navigate('Attendance', { classId: classes[0].id });
+            navigation.navigate('Attendance', {});
           } else {
-            navigation.navigate('MyClasses');
+            onSelectTab?.('MyClasses');
           }
         },
       },
     ],
-    [navigation, classes, accent],
+    [navigation, classes, accent, onSelectTab],
   );
 
   return (
@@ -251,7 +254,7 @@ const Home: React.FC<Props> = ({ navigation }) => {
               </View>
               <Pressable
                 style={styles.avatar}
-                onPress={() => navigation.navigate('Settings')}
+                onPress={() => onSelectTab?.('Settings')}
                 accessibilityRole="button"
                 accessibilityLabel="Open settings"
                 android_ripple={{ color: theme.rippleLight, borderless: true }}
@@ -310,7 +313,7 @@ const Home: React.FC<Props> = ({ navigation }) => {
 
             <View style={styles.classesHead}>
               <View>
-                <Text style={styles.sectionHeadingTight}>Your classes</Text>
+                <Text style={styles.sectionHeadingTight}>Mark Attendance</Text>
                 <Text style={styles.sectionMeta}>
                   {classes.length === 0
                     ? 'Nothing here yet'
@@ -318,7 +321,7 @@ const Home: React.FC<Props> = ({ navigation }) => {
                 </Text>
               </View>
               <Pressable
-                onPress={() => navigation.navigate('MyClasses')}
+                onPress={() => onSelectTab?.('MyClasses')}
                 style={styles.seeAll}
                 hitSlop={10}
               >
@@ -391,7 +394,7 @@ const Home: React.FC<Props> = ({ navigation }) => {
           </View>
         </PulseScrollView>
 
-        <BottomTab navigation={navigation} currentRoute="Home" />
+        {!embedded && <BottomTab navigation={navigation} currentRoute="Home" />}
       </View>
     </SafeAreaView>
   );

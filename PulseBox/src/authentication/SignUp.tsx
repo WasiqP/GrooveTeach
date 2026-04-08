@@ -14,13 +14,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { theme, fonts as F, ink, radius } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
-import { useUser } from '../context/UserContext';
+import { usePulseAlert } from '../context/AlertModalContext';
 import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 const SignUp: React.FC<Props> = ({ navigation }) => {
-  const { setDisplayName } = useUser();
+  const { showAlert } = usePulseAlert();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,6 +42,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <PulseScrollView
+          customTrack={false}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -98,9 +99,28 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
             <Pressable
               style={styles.primaryBtn}
               android_ripple={{ color: theme.rippleLight }}
-              onPress={async () => {
-                await setDisplayName(name);
-                navigation.replace('Home');
+              onPress={() => {
+                if (!name.trim() || !email.trim()) {
+                  showAlert({
+                    variant: 'warning',
+                    title: 'Missing information',
+                    message: 'Please enter your name and email to continue.',
+                  });
+                  return;
+                }
+                if (!password.trim() || password !== confirm) {
+                  showAlert({
+                    variant: 'warning',
+                    title: 'Check your password',
+                    message: 'Enter a password and make sure both fields match.',
+                  });
+                  return;
+                }
+                navigation.replace('VerifyOtp', {
+                  email: email.trim(),
+                  purpose: 'signup',
+                  name: name.trim(),
+                });
               }}
             >
               <Text style={styles.primaryLabel}>Sign Up</Text>
@@ -141,24 +161,23 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    marginBottom: 6,
+    marginBottom: 2,
   },
   scrollContent: {
-    flexGrow: 1,
     paddingHorizontal: 28,
-    paddingTop: 6,
-    paddingBottom: 28,
+    paddingTop: 0,
+    paddingBottom: 18,
     maxWidth: 480,
     width: '100%',
     alignSelf: 'center',
   },
   brandRow: {
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   logo: {
-    width: 128,
-    height: 108,
+    width: 118,
+    height: 100,
     maxWidth: '100%',
   },
   inner: {
@@ -168,15 +187,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: F.dmMedium,
     color: ink.inkSoft,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   heading: {
-    fontSize: 36,
+    fontSize: 34,
     lineHeight: 40,
     fontFamily: F.outfitBlack,
     color: ink.ink,
-    marginTop: 2,
-    marginBottom: 18,
+    marginTop: 0,
+    marginBottom: 12,
     letterSpacing: -0.8,
   },
   input: {
@@ -185,20 +204,20 @@ const styles = StyleSheet.create({
     borderColor: ink.borderInk,
     borderRadius: radius.input,
     paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
     fontSize: 15,
     fontFamily: F.dmRegular,
     color: ink.ink,
-    marginTop: 12,
+    marginTop: 10,
     backgroundColor: ink.canvas,
   },
   inputFirst: {
     marginTop: 0,
   },
   primaryBtn: {
-    marginTop: 22,
+    marginTop: 16,
     backgroundColor: theme.primary,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: radius.btn,
     alignItems: 'center',
   },
@@ -208,7 +227,7 @@ const styles = StyleSheet.create({
     fontFamily: F.outfitBold,
   },
   socialHint: {
-    marginTop: 20,
+    marginTop: 12,
     fontSize: 13,
     textAlign: 'center',
     color: ink.inkSoft,
@@ -217,13 +236,13 @@ const styles = StyleSheet.create({
   socialRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
-    marginTop: 12,
+    gap: 16,
+    marginTop: 8,
   },
   socialBtn: {
     backgroundColor: ink.borderInk,
-    width: 98,
-    paddingVertical: 12,
+    width: 92,
+    paddingVertical: 10,
     borderRadius: radius.btn,
     alignItems: 'center',
     borderWidth: ink.borderWidth,
@@ -235,21 +254,21 @@ const styles = StyleSheet.create({
     fontFamily: F.dmBold,
   },
   terms: {
-    marginTop: 20,
+    marginTop: 12,
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 17,
     textAlign: 'center',
     color: ink.inkSoft,
     fontFamily: F.dmRegular,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
   },
   link: {
     color: theme.primary,
     fontFamily: F.dmBold,
   },
   loginRow: {
-    marginTop: 22,
-    paddingBottom: 10,
+    marginTop: 14,
+    paddingBottom: 6,
     alignItems: 'center',
   },
   alt: {

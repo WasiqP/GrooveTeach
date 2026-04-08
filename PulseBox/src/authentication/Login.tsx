@@ -60,7 +60,7 @@ const Login: React.FC<Props> = ({ navigation }) => {
         >
           <Text style={styles.primaryLabel}>Log In</Text>
         </Pressable>
-        <Pressable onPress={() => {}} hitSlop={8}>
+        <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8}>
           <Text style={styles.forgot}>Forgot password?</Text>
         </Pressable>
         <Pressable onPress={() => navigation.navigate('SignUp')} hitSlop={8}>

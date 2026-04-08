@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { ink } from '../theme/typography';
 import BackIcon from '../../assets/images/Back.svg';
 import { PulseScrollView } from '../components/PulseScrollView';
+import { usePulseAlert } from '../context/AlertModalContext';
 import Svg, { Path } from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonPlanner'>;
@@ -20,6 +21,7 @@ const AIIcon = ({ size = 24, color = '#A060FF' }) => (
 );
 
 const LessonPlanner: React.FC<Props> = ({ navigation }) => {
+  const { showAlert, showSuccess } = usePulseAlert();
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
   const [gradeLevel, setGradeLevel] = useState('');
@@ -32,7 +34,11 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
 
   const handleGenerate = async () => {
     if (!subject || !topic || !gradeLevel || !duration) {
-      Alert.alert('Missing Information', 'Please fill in all required fields');
+      showAlert({
+        variant: 'warning',
+        title: 'Missing Information',
+        message: 'Please fill in all required fields',
+      });
       return;
     }
 
@@ -41,18 +47,9 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
     // Simulate AI generation (replace with actual API call later)
     setTimeout(() => {
       setIsGenerating(false);
-      Alert.alert(
+      showSuccess(
         'Lesson Plan Generated!',
         'Your AI-generated lesson plan is ready. This feature will be fully functional once we integrate the AI API.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Navigate to lesson plan view/edit screen
-              // navigation.navigate('LessonPlanView', { planId: 'generated-id' });
-            },
-          },
-        ]
       );
     }, 2000);
   };

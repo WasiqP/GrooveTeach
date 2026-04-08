@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
@@ -7,8 +7,37 @@ import { ink } from '../theme/typography';
 import BackIcon from '../../assets/images/Back.svg';
 import { PulseScrollView } from '../components/PulseScrollView';
 import Svg, { Path } from 'react-native-svg';
+import {
+  useClasses,
+  type ClassAnnouncement,
+  type ClassActivityItem,
+  type ClassActivityKind,
+} from '../context/ClassesContext';
+import { useGradesTasks, type TaskKind } from '../context/GradesTasksContext';
+import { usePulseAlert } from '../context/AlertModalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ClassDetails'>;
+
+const TASK_KIND_LABEL: Record<TaskKind, string> = {
+  quiz: 'Quiz',
+  assignment: 'Assignment',
+  project: 'Project',
+  test: 'Test',
+};
+
+function formatRelativeTime(iso: string): string {
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 45) return 'Just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}d ago`;
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
 
 // Icons
 const StudentsIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
@@ -51,19 +80,38 @@ const ChartIcon = ({ size = 24, color = '#FF9800' }) => (
   </Svg>
 );
 
+const MegaphoneIcon = ({ size = 20, color = '#A060FF' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M3 11V9a2 2 0 012-2h2l5-3v14l-5-3H5a2 2 0 01-2-2v-2z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path d="M16 8v8M19 10v4" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
+
+const ActivityKindIcon = ({ kind }: { kind: ClassActivityKind }) => {
+  switch (kind) {
+    case 'announcement':
+      return <MegaphoneIcon size={18} color="#A060FF" />;
+    case 'attendance':
+      return <CheckIcon size={18} color="#4CAF50" />;
+    case 'task_assigned':
+      return <DocumentIcon size={18} color="#A060FF" />;
+  }
+};
+
 const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
   const { classId } = route.params;
-  
-  // Mock class data - will be replaced with Firebase
-  const classData = {
-    id: classId,
-    name: 'Mathematics 101',
-    subject: 'Mathematics',
-    gradeLevel: 'Grade 10',
-    studentCount: 28,
-    schedule: 'Mon, Wed, Fri - 9:00 AM',
-    roomNumber: 'Room 205',
-  };
+  const { classes, deleteClass, updateClass } = useClasses();
+  const { getTasksForClass } = useGradesTasks();
+  const { showAlert, showSuccess } = usePulseAlert();
+  const [announcementDraft, setAnnouncementDraft] = useState('');
+
+  const classData = classes.find((c) => c.id === classId);
 
   const quickActions = [
     {
@@ -78,23 +126,131 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
       title: 'View Students',
       icon: UsersIcon,
       color: '#2196F3',
-      onPress: () => navigation.navigate('Responses'), // Will navigate to Students screen
+      onPress: () => navigation.navigate('ViewStudents', { classId }),
     },
     {
-      id: 'assignment',
-      title: 'Create Assignment',
+      id: 'quizzes',
+      title: 'Quizzes & assignments',
       icon: DocumentIcon,
       color: '#A060FF',
-      onPress: () => navigation.navigate('CreateAssignment', { classId }),
+      onPress: () => navigation.navigate('Home', { tab: 'Quizzes' }),
     },
     {
       id: 'grades',
       title: 'View Grades',
       icon: ChartIcon,
       color: '#FF9800',
-      onPress: () => navigation.navigate('Grading', { classId }),
+      onPress: () => navigation.navigate('Home', { tab: 'ViewGrades' }),
     },
   ];
+
+  const announcements = useMemo(() => {
+    const list = classData?.announcements ?? [];
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [classData?.announcements]);
+
+  const recentActivityItems = useMemo(() => {
+    if (!classData) return [];
+    const log = classData.activityLog ?? [];
+    const tasks = getTasksForClass(classId);
+    const fromTasks: ClassActivityItem[] = tasks.map((t) => ({
+      id: `task-${t.id}`,
+      kind: 'task_assigned' as const,
+      headline: `Assigned: ${t.title}`,
+      detail: [TASK_KIND_LABEL[t.kind], t.dueLabel].filter(Boolean).join(' · '),
+      createdAt: t.createdAt,
+    }));
+    const merged = [...log, ...fromTasks];
+    merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const seen = new Set<string>();
+    const out: ClassActivityItem[] = [];
+    for (const item of merged) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      out.push(item);
+    }
+    return out.slice(0, 25);
+  }, [classData, classId, getTasksForClass]);
+
+  const postAnnouncement = () => {
+    if (!classData) return;
+    const body = announcementDraft.trim();
+    if (!body) {
+      showAlert({
+        variant: 'warning',
+        title: 'Empty announcement',
+        message: 'Write something before posting.',
+      });
+      return;
+    }
+    const createdAt = new Date().toISOString();
+    const next: ClassAnnouncement = {
+      id: `ann-${Date.now()}`,
+      body,
+      createdAt,
+    };
+    const merged = [next, ...(classData.announcements ?? [])];
+    const activity: ClassActivityItem = {
+      id: `act-${Date.now()}`,
+      kind: 'announcement',
+      headline: 'Posted an announcement',
+      detail: body.length > 100 ? `${body.slice(0, 100)}…` : body,
+      createdAt,
+    };
+    void updateClass(classData.id, {
+      announcements: merged,
+      activityLog: [activity, ...(classData.activityLog ?? [])].slice(0, 40),
+    }).then(() => {
+      setAnnouncementDraft('');
+      showSuccess('Posted', 'Your announcement was added for this class.');
+    });
+  };
+
+  const confirmDelete = () => {
+    if (!classData) return;
+    showAlert({
+      variant: 'warning',
+      title: 'Delete this class?',
+      message: `“${classData.name}” will be removed. This cannot be undone.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void deleteClass(classData.id).then(() => navigation.goBack());
+          },
+        },
+      ],
+    });
+  };
+
+  if (!classData) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
+          >
+            <BackIcon width={24} height={24} stroke="#000000" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Class Details</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.notFoundWrap}>
+          <Text style={styles.notFoundTitle}>Class not found</Text>
+          <Text style={styles.notFoundSub}>It may have been deleted.</Text>
+          <Pressable style={styles.notFoundBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.notFoundBtnTxt}>Go back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -115,10 +271,16 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Class Info Card */}
         <View style={styles.infoCard}>
           <Text style={styles.className}>{classData.name}</Text>
+          {(classData.schoolName || classData.schoolType) ? (
+            <Text style={styles.schoolLine}>
+              {[classData.schoolName, classData.schoolType].filter(Boolean).join(' · ')}
+            </Text>
+          ) : null}
           <Text style={styles.classSubject}>{classData.subject} • {classData.gradeLevel}</Text>
           
           <View style={styles.infoRow}>
@@ -154,14 +316,111 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Recent Activity */}
-        <View style={styles.activitySection}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <View style={styles.activityCard}>
-            <Text style={styles.activityText}>No recent activity</Text>
-            <Text style={styles.activitySubtext}>Activity will appear here</Text>
+        {/* Announcements */}
+        <View style={styles.sectionOuter}>
+          <View style={styles.borderedSection}>
+            <Text style={styles.sectionTitleInCard}>Announcements</Text>
+            <Text style={styles.announcementLead}>
+              Share updates with everyone in this class. New posts appear at the top.
+            </Text>
+            <View style={styles.announcementComposer}>
+              <TextInput
+                style={styles.announcementInput}
+                placeholder="Write an announcement…"
+                placeholderTextColor="#94A3B8"
+                value={announcementDraft}
+                onChangeText={setAnnouncementDraft}
+                multiline
+                textAlignVertical="top"
+                maxLength={2000}
+              />
+              <Pressable
+                style={({ pressed }) => [styles.postAnnouncementBtn, pressed && styles.postAnnouncementBtnPressed]}
+                onPress={postAnnouncement}
+                android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+              >
+                <Text style={styles.postAnnouncementBtnText}>Post announcement</Text>
+              </Pressable>
+            </View>
+            {announcements.length > 0 ? (
+              <View style={styles.announcementList}>
+                {announcements.map((a, index) => (
+                  <View
+                    key={a.id}
+                    style={[
+                      styles.announcementRow,
+                      index === announcements.length - 1 && styles.announcementRowLast,
+                    ]}
+                  >
+                    <View style={styles.announcementRowHeader}>
+                      <MegaphoneIcon size={16} color="#A060FF" />
+                      <Text style={styles.announcementDate}>
+                        {new Date(a.createdAt).toLocaleString(undefined, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}
+                      </Text>
+                    </View>
+                    <Text style={styles.announcementBody}>{a.body}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.announcementEmpty}>No announcements yet. Be the first to post.</Text>
+            )}
           </View>
         </View>
+
+        {/* Recent Activity */}
+        <View style={styles.sectionOuter}>
+          <View style={styles.borderedSection}>
+            <View style={styles.activitySectionHeader}>
+              <Text style={styles.sectionTitleInCard}>Recent activity</Text>
+              <View style={styles.notifPill}>
+                <Text style={styles.notifPillText}>Notifications</Text>
+              </View>
+            </View>
+            <Text style={styles.activityIntro}>
+              Tasks, attendance, and announcements for this class appear here.
+            </Text>
+            {recentActivityItems.length === 0 ? (
+              <View style={styles.activityEmptyBox}>
+                <Text style={styles.activityEmptyTitle}>No activity yet</Text>
+                <Text style={styles.activityEmptySub}>
+                  Post an announcement, mark attendance, or assign a task to see updates.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.activityList}>
+                {recentActivityItems.map((item) => (
+                  <View key={item.id} style={styles.activityRow}>
+                    <View style={styles.activityUnreadDot} />
+                    <View style={styles.activityIconWrap}>
+                      <ActivityKindIcon kind={item.kind} />
+                    </View>
+                    <View style={styles.activityCopy}>
+                      <Text style={styles.activityHeadline}>{item.headline}</Text>
+                      {item.detail ? (
+                        <Text style={styles.activityDetail} numberOfLines={3}>
+                          {item.detail}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.activityTime}>{formatRelativeTime(item.createdAt)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+
+        <Pressable
+          style={styles.deleteBtn}
+          onPress={confirmDelete}
+          android_ripple={{ color: 'rgba(220,38,38,0.12)' }}
+        >
+          <Text style={styles.deleteBtnText}>Delete class</Text>
+        </Pressable>
       </PulseScrollView>
     </SafeAreaView>
   );
@@ -219,6 +478,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit-Bold',
     color: '#000000',
     marginBottom: 8,
+  },
+  schoolLine: {
+    fontSize: 14,
+    fontFamily: 'DMSans-Regular',
+    color: '#64748B',
+    marginBottom: 10,
   },
   classSubject: {
     fontSize: 16,
@@ -287,28 +552,236 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center',
   },
-  activitySection: {
+  sectionOuter: {
     paddingHorizontal: 24,
     marginBottom: 20,
   },
-  activityCard: {
-    backgroundColor: '#F5F5F5',
+  borderedSection: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 12,
+    padding: 16,
+  },
+  sectionTitleInCard: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'Outfit-Bold',
+    color: '#000000',
+    marginBottom: 8,
+  },
+  announcementLead: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: 'DMSans-Regular',
+    color: '#64748B',
+    marginBottom: 14,
+  },
+  announcementComposer: {
+    marginBottom: 16,
+  },
+  announcementInput: {
+    minHeight: 100,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 12,
-    padding: 24,
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+    fontSize: 15,
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
+    backgroundColor: '#FAFAFA',
+    marginBottom: 12,
+  },
+  postAnnouncementBtn: {
+    backgroundColor: '#A060FF',
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  activityText: {
+  postAnnouncementBtnPressed: {
+    opacity: 0.9,
+  },
+  postAnnouncementBtnText: {
     fontSize: 16,
+    fontFamily: 'DMSans-SemiBold',
+    color: '#FFFFFF',
+  },
+  announcementList: {
+    marginTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E5E5E5',
+  },
+  announcementRow: {
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5E5',
+  },
+  announcementRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
+  announcementRowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  announcementDate: {
+    fontSize: 12,
     fontFamily: 'DMSans-Regular',
+    color: '#64748B',
+  },
+  announcementBody: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: 'DMSans-Regular',
+    color: '#1A1A22',
+  },
+  announcementEmpty: {
+    fontSize: 14,
+    fontFamily: 'DMSans-Regular',
+    color: '#94A3B8',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  activitySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  notifPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#000000',
+    backgroundColor: 'rgba(160, 96, 255, 0.08)',
+  },
+  notifPillText: {
+    fontSize: 11,
+    fontFamily: 'DMSans-SemiBold',
+    color: '#000000',
+    letterSpacing: 0.2,
+  },
+  activityIntro: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: 'DMSans-Regular',
+    color: '#64748B',
+    marginBottom: 12,
+  },
+  activityEmptyBox: {
+    paddingVertical: 12,
+  },
+  activityEmptyTitle: {
+    fontSize: 15,
+    fontFamily: 'DMSans-SemiBold',
     color: '#1A1A22',
     marginBottom: 4,
   },
-  activitySubtext: {
+  activityEmptySub: {
     fontSize: 14,
+    lineHeight: 20,
     fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
+    color: '#64748B',
+  },
+  activityList: {
+    gap: 0,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5E5',
+  },
+  activityUnreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#A060FF',
+    marginTop: 14,
+    marginRight: 8,
+  },
+  activityIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(160, 96, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  activityCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  activityHeadline: {
+    fontSize: 15,
+    fontFamily: 'DMSans-SemiBold',
+    color: '#000000',
+    marginBottom: 4,
+  },
+  activityDetail: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: 'DMSans-Regular',
+    color: '#475569',
+    marginBottom: 6,
+  },
+  activityTime: {
+    fontSize: 12,
+    fontFamily: 'DMSans-Regular',
+    color: '#94A3B8',
+  },
+  deleteBtn: {
+    marginHorizontal: 24,
+    marginTop: 8,
+    marginBottom: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(220, 38, 38, 0.45)',
+    backgroundColor: 'rgba(220, 38, 38, 0.06)',
+    alignItems: 'center',
+  },
+  deleteBtnText: {
+    fontSize: 16,
+    fontFamily: 'DMSans-SemiBold',
+    color: '#DC2626',
+  },
+  notFoundWrap: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notFoundTitle: {
+    fontSize: 20,
+    fontFamily: 'Outfit-Bold',
+    color: '#000000',
+    marginBottom: 8,
+  },
+  notFoundSub: {
+    fontSize: 15,
+    fontFamily: 'DMSans-Regular',
+    color: '#64748B',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  notFoundBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#A060FF',
+  },
+  notFoundBtnTxt: {
+    fontSize: 16,
+    fontFamily: 'DMSans-SemiBold',
+    color: '#FFFFFF',
   },
 });
 

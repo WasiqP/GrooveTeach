@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
 import { PulseScrollView } from '../components/PulseScrollView';
@@ -22,7 +22,10 @@ const R_INPUT = radius.input;
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Quizzes'>;
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+  embedded?: boolean;
+};
 
 interface Quiz {
   id: string;
@@ -44,7 +47,7 @@ const QuizIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: s
   </Svg>
 );
 
-const Quizzes: React.FC<Props> = ({ navigation }) => {
+const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
   const { forms } = useForms(); // Use existing forms context - forms are now quizzes
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'quiz' | 'assignment' | 'test'>('all');
@@ -296,7 +299,7 @@ const Quizzes: React.FC<Props> = ({ navigation }) => {
         )}
       </PulseScrollView>
 
-      <BottomTab navigation={navigation} currentRoute="Quizzes" />
+      {!embedded && <BottomTab navigation={navigation} currentRoute="Quizzes" />}
     </SafeAreaView>
   );
 };

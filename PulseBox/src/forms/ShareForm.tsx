@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Alert, Dimensions, Share as RNShare, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Dimensions, Share as RNShare, Linking } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { useForms } from '../context/FormsContext';
@@ -10,6 +10,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { captureRef } from 'react-native-view-shot';
 import { PulseScrollView } from '../components/PulseScrollView';
+import { usePulseAlert } from '../context/AlertModalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShareForm'>;
 
@@ -18,6 +19,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ShareForm: React.FC<Props> = ({ route, navigation }) => {
   const { formId } = route.params;
   const { forms } = useForms();
+  const { showSuccess, showError } = usePulseAlert();
   const form = forms.find(f => f.id === formId);
   
   const [activeTab, setActiveTab] = useState<'link' | 'qr'>('link');
@@ -31,10 +33,10 @@ const ShareForm: React.FC<Props> = ({ route, navigation }) => {
   const copyToClipboard = async () => {
     try {
       await Clipboard.setString(formLink);
-      Alert.alert('Link Copied', 'Form link has been copied to clipboard');
+      showSuccess('Link Copied', 'Form link has been copied to clipboard.');
     } catch (error) {
       console.error('Error copying to clipboard:', error);
-      Alert.alert('Error', 'Failed to copy link to clipboard');
+      showError('Error', 'Failed to copy link to clipboard.');
     }
   };
 
@@ -44,11 +46,11 @@ const ShareForm: React.FC<Props> = ({ route, navigation }) => {
       if (supported) {
         await Linking.openURL(formLink);
       } else {
-        Alert.alert('Error', `Cannot open URL: ${formLink}`);
+        showError('Error', `Cannot open URL: ${formLink}`);
       }
     } catch (error) {
       console.error('Error opening URL:', error);
-      Alert.alert('Error', 'Failed to open link in browser');
+      showError('Error', 'Failed to open link in browser.');
     }
   };
 
@@ -98,12 +100,12 @@ const ShareForm: React.FC<Props> = ({ route, navigation }) => {
           format: 'png',
           quality: 1.0,
         });
-        Alert.alert('QR Code Saved', `QR code has been saved to: ${uri}`);
+        showSuccess('QR Code Saved', `QR code has been saved to: ${uri}`);
         // Note: To save to gallery, you may need to use a library like react-native-fs or expo-media-library
       }
     } catch (error) {
       console.error('Error saving QR code:', error);
-      Alert.alert('Error', 'Failed to save QR code');
+      showError('Error', 'Failed to save QR code.');
     }
   };
 

@@ -1,15 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
 import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
 import { theme, fonts as F, ink, radius } from '../theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+  embedded?: boolean;
+};
 
-const Settings: React.FC<Props> = ({ navigation }) => {
+const Settings: React.FC<Props> = ({ navigation, embedded }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
@@ -84,7 +87,7 @@ const Settings: React.FC<Props> = ({ navigation }) => {
         </ScrollView>
       </View>
 
-      <BottomTab navigation={navigation} currentRoute="Settings" />
+      {!embedded && <BottomTab navigation={navigation} currentRoute="Settings" />}
     </SafeAreaView>
   );
 };
