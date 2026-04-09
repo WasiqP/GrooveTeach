@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -25,17 +26,9 @@ import {
   type TaskKind,
   type TaskGradeRecord,
 } from '../context/GradesTasksContext';
-import { theme, fonts as F, ink, radius } from '../theme';
+import { fonts as F } from '../theme';
 import Svg, { Path } from 'react-native-svg';
-
-const CANVAS = ink.canvas;
-const INK = ink.ink;
-const INK_SOFT = ink.inkSoft;
-const BORDER_INK = ink.borderInk;
-const BORDER_WIDTH = ink.borderWidth;
-const ROW_DIVIDER = ink.rowDivider;
-const R_CARD = radius.card;
-const R_INPUT = radius.input;
+import { useViewGradesStyles } from './useViewGradesStyles';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -53,7 +46,7 @@ const KIND_ORDER: TaskKind[] = ['quiz', 'assignment', 'test', 'project'];
 
 type StatusFilter = 'all' | TaskGradeRecord['status'];
 
-const SearchIcon = ({ size = 20, color = INK_SOFT }: { size?: number; color?: string }) => (
+const SearchIcon = ({ size = 20, color = '#1A1A22' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
@@ -66,19 +59,31 @@ const SearchIcon = ({ size = 20, color = INK_SOFT }: { size?: number; color?: st
   </Svg>
 );
 
-const ChevronDownIcon = ({ size = 18, color = INK }: { size?: number; color?: string }) => (
+const ChevronDownIcon = ({ size = 18, color = '#050508' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M6 9L12 15L18 9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
-const CloseIcon = ({ size = 20, color = INK_SOFT }: { size?: number; color?: string }) => (
+const ChevronUpIcon = ({ size = 18, color = '#050508' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M6 15L12 9L18 15" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CloseIcon = ({ size = 20, color = '#1A1A22' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M18 6L6 18M6 6L18 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
-const BookIcon = ({ size = 18, color = theme.primary }: { size?: number; color?: string }) => (
+const ChevronRightIcon = ({ size = 18, color = '#A060FF' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 18L15 12L9 6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const BookIcon = ({ size = 18, color = '#A060FF' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20"
@@ -110,18 +115,19 @@ function statusLabel(s: TaskGradeRecord['status']): string {
   }
 }
 
-function gradeColor(status: TaskGradeRecord['status']): string {
+function gradeColor(status: TaskGradeRecord['status'], primary: string): string {
   switch (status) {
     case 'missing':
       return '#DC2626';
     case 'pending':
       return '#D97706';
     default:
-      return theme.primary;
+      return primary;
   }
 }
 
 const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
+  const { styles, ink, theme } = useViewGradesStyles();
   const { classes } = useClasses();
   const { tasks, isLoading, getGrade } = useGradesTasks();
 
@@ -132,6 +138,16 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
   const [studentSearch, setStudentSearch] = useState('');
   const [taskPickerVisible, setTaskPickerVisible] = useState(false);
   const [taskModalSearch, setTaskModalSearch] = useState('');
+  const [filtersExpanded, setFiltersExpanded] = useState(true);
+
+  /** Collapse filter chips when leaving this screen (tab change or stack navigation). */
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setFiltersExpanded(false);
+      };
+    }, []),
+  );
 
   const classById = useMemo(() => {
     const m = new Map<string, ClassData>();
@@ -221,25 +237,33 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
-        <TabScreenHeaderBar navigation={navigation} paddingHorizontal={20}>
-          <View>
-            <Text style={styles.title}>View grades</Text>
-            <Text style={styles.subtitle}>
-              Filter by class and task to see each assignment or quiz. Grades are stored per student
-              and task.
-            </Text>
-          </View>
-        </TabScreenHeaderBar>
-
         {isLoading ? (
           <View style={styles.loading}>
             <ActivityIndicator size="small" color={theme.primary} />
           </View>
         ) : (
           <>
-            <View style={styles.filterPanel}>
+            <PulseScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <TabScreenHeaderBar navigation={navigation} paddingHorizontal={0}>
+                <View>
+                  <Text style={styles.title}>View Grades</Text>
+                  <Text style={styles.subtitle}>
+                    Filter by class and task to see each assignment or quiz. Grades are stored per
+                    student and task.
+                  </Text>
+                </View>
+              </TabScreenHeaderBar>
+
+              <View style={styles.filterPanel}>
               <View style={styles.searchRow}>
-                <SearchIcon size={20} color={INK_SOFT} />
+                <View style={styles.searchRowIconWrap}>
+                  <SearchIcon size={20} color={ink.inkSoft} />
+                </View>
                 <TextInput
                   style={styles.searchInputInner}
                   placeholder="Search students by name or email…"
@@ -248,114 +272,197 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
                   onChangeText={setStudentSearch}
                   autoCorrect={false}
                   autoCapitalize="none"
+                  {...(Platform.OS === 'android' ? { includeFontPadding: false } : {})}
                 />
                 {studentSearch.length > 0 ? (
-                  <Pressable
-                    hitSlop={12}
-                    onPress={() => setStudentSearch('')}
-                    style={styles.searchClear}
-                    accessibilityLabel="Clear search"
-                  >
-                    <CloseIcon size={18} color={INK_SOFT} />
-                  </Pressable>
+                  <View style={styles.searchRowIconWrap}>
+                    <Pressable
+                      hitSlop={12}
+                      onPress={() => setStudentSearch('')}
+                      style={styles.searchClear}
+                      accessibilityLabel="Clear search"
+                    >
+                      <CloseIcon size={18} color={ink.inkSoft} />
+                    </Pressable>
+                  </View>
                 ) : null}
               </View>
 
               <View style={styles.filterPanelHeader}>
-                <Text style={styles.filterPanelTitle}>Filters</Text>
                 <Pressable
-                  onPress={resetFilters}
-                  disabled={!hasActiveFilters}
-                  style={({ pressed }) => [
-                    styles.resetBtn,
-                    !hasActiveFilters && styles.resetBtnDisabled,
-                    pressed && hasActiveFilters && styles.resetBtnPressed,
-                  ]}
+                  style={styles.filtersHeaderLead}
+                  onPress={() => setFiltersExpanded((v) => !v)}
+                  accessibilityRole="button"
+                  accessibilityLabel={filtersExpanded ? 'Collapse filters' : 'Expand filters'}
+                  android_ripple={{ color: theme.rippleLight }}
                 >
-                  <Text style={[styles.resetBtnTxt, !hasActiveFilters && styles.resetBtnTxtDisabled]}>
-                    Reset all
-                  </Text>
+                  <Text style={styles.filterPanelTitle}>Filters</Text>
+                  {filtersExpanded ? (
+                    <ChevronUpIcon size={20} color={ink.inkSoft} />
+                  ) : (
+                    <ChevronDownIcon size={20} color={ink.inkSoft} />
+                  )}
                 </Pressable>
+                <View style={styles.filterHeaderActions}>
+                  <Pressable
+                    onPress={resetFilters}
+                    disabled={!hasActiveFilters}
+                    style={({ pressed }) => [
+                      styles.resetBtn,
+                      !hasActiveFilters && styles.resetBtnDisabled,
+                      pressed && hasActiveFilters && styles.resetBtnPressed,
+                    ]}
+                  >
+                    <Text style={[styles.resetBtnTxt, !hasActiveFilters && styles.resetBtnTxtDisabled]}>
+                      Reset all
+                    </Text>
+                  </Pressable>
+                  {filtersExpanded ? (
+                    <Pressable
+                      style={({ pressed }) => [styles.collapseFiltersBtn, pressed && styles.resetBtnPressed]}
+                      onPress={() => setFiltersExpanded(false)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close filter section"
+                      android_ripple={{ color: theme.rippleLight }}
+                    >
+                      <Text style={styles.collapseFiltersBtnTxt}>Hide</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
 
-              <Text style={styles.filterLabel}>Class</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                <FilterChip
-                  label="All classes"
-                  selected={classFilter === 'all'}
-                  onPress={() => setClassFilter('all')}
-                />
-                {sortedClasses.map((c) => (
-                  <FilterChip
-                    key={c.id}
-                    label={c.name}
-                    selected={classFilter === c.id}
-                    onPress={() => setClassFilter(c.id)}
-                  />
-                ))}
-              </ScrollView>
+              {!filtersExpanded ? (
+                <Pressable
+                  style={styles.filterCollapsedHint}
+                  onPress={() => setFiltersExpanded(true)}
+                  android_ripple={{ color: theme.rippleLight }}
+                >
+                  <Text style={styles.filterCollapsedHintLabel} numberOfLines={1}>
+                    Task
+                  </Text>
+                  <Text style={styles.filterCollapsedHintValue} numberOfLines={2}>
+                    {selectedTaskLabel}
+                    {hasActiveFilters ? ' · filters active' : ''}
+                  </Text>
+                  <Text style={styles.filterCollapsedTap}>Tap to expand filters</Text>
+                </Pressable>
+              ) : null}
 
-              <Text style={styles.filterLabel}>Assignment type</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                <FilterChip
-                  label="All types"
-                  selected={kindFilter === 'all'}
-                  onPress={() => setKindFilter('all')}
-                />
-                {KIND_ORDER.map((k) => (
-                  <FilterChip
-                    key={k}
-                    label={KIND_LABEL[k]}
-                    selected={kindFilter === k}
-                    onPress={() => setKindFilter(kindFilter === k ? 'all' : k)}
-                  />
-                ))}
-              </ScrollView>
+              {filtersExpanded ? (
+                <>
+                  <Text style={styles.filterLabel}>Class</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipsRow}
+                  >
+                    <FilterChip
+                      label="All classes"
+                      selected={classFilter === 'all'}
+                      onPress={() => setClassFilter('all')}
+                    />
+                    {sortedClasses.map((c) => (
+                      <FilterChip
+                        key={c.id}
+                        label={c.name}
+                        selected={classFilter === c.id}
+                        onPress={() => setClassFilter(c.id)}
+                      />
+                    ))}
+                  </ScrollView>
 
-              <Text style={styles.filterLabel}>Grade status</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                <FilterChip
-                  label="All statuses"
-                  selected={statusFilter === 'all'}
-                  onPress={() => setStatusFilter('all')}
-                />
-                {(['graded', 'pending', 'missing'] as const).map((st) => (
-                  <FilterChip
-                    key={st}
-                    label={statusLabel(st)}
-                    selected={statusFilter === st}
-                    onPress={() => setStatusFilter(statusFilter === st ? 'all' : st)}
-                  />
-                ))}
-              </ScrollView>
+                  <Text style={styles.filterLabel}>Assignment type</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipsRow}
+                  >
+                    <FilterChip
+                      label="All types"
+                      selected={kindFilter === 'all'}
+                      onPress={() => setKindFilter('all')}
+                    />
+                    {KIND_ORDER.map((k) => (
+                      <FilterChip
+                        key={k}
+                        label={KIND_LABEL[k]}
+                        selected={kindFilter === k}
+                        onPress={() => setKindFilter(kindFilter === k ? 'all' : k)}
+                      />
+                    ))}
+                  </ScrollView>
 
-              <Text style={styles.filterLabel}>Task</Text>
-              <Pressable
-                style={styles.taskPickerBtn}
-                onPress={() => {
-                  setTaskModalSearch('');
-                  setTaskPickerVisible(true);
-                }}
-                android_ripple={{ color: theme.rippleLight }}
-              >
-                <Text style={styles.taskPickerBtnText} numberOfLines={2}>
-                  {selectedTaskLabel}
-                </Text>
-                <ChevronDownIcon size={20} color={INK} />
-              </Pressable>
+                  <Text style={styles.filterLabel}>Grade status</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipsRow}
+                  >
+                    <FilterChip
+                      label="All statuses"
+                      selected={statusFilter === 'all'}
+                      onPress={() => setStatusFilter('all')}
+                    />
+                    {(['graded', 'pending', 'missing'] as const).map((st) => (
+                      <FilterChip
+                        key={st}
+                        label={statusLabel(st)}
+                        selected={statusFilter === st}
+                        onPress={() => setStatusFilter(statusFilter === st ? 'all' : st)}
+                      />
+                    ))}
+                  </ScrollView>
+
+                  <Text style={styles.filterLabel}>Task</Text>
+                  <Pressable
+                    style={styles.taskPickerBtn}
+                    onPress={() => {
+                      setTaskModalSearch('');
+                      setTaskPickerVisible(true);
+                    }}
+                    android_ripple={{ color: theme.rippleLight }}
+                  >
+                    <Text style={styles.taskPickerBtnText} numberOfLines={2}>
+                      {selectedTaskLabel}
+                    </Text>
+                    <ChevronDownIcon size={20} color={ink.ink} />
+                  </Pressable>
+                </>
+              ) : null}
             </View>
+
+              {classes.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyTitle}>No classes yet</Text>
+                  <Text style={styles.emptyBody}>Create a class and add students to see grades.</Text>
+                </View>
+              ) : visibleTasks.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyTitle}>No tasks match</Text>
+                  <Text style={styles.emptyBody}>
+                    Adjust class, type, or task filters. Tasks appear when they are assigned to your
+                    classes.
+                  </Text>
+                </View>
+              ) : (
+                visibleTasks.map((task) => {
+                  const cls = classById.get(task.classId);
+                  if (!cls) return null;
+                  return (
+                    <TaskGradesSection
+                      key={task.id}
+                      navigation={navigation}
+                      task={task}
+                      classData={cls}
+                      getGrade={getGrade}
+                      studentSearch={studentSearch}
+                      statusFilter={statusFilter}
+                    />
+                  );
+                })
+              )}
+              <View style={styles.bottomSpacer} />
+            </PulseScrollView>
 
             <Modal
               visible={taskPickerVisible}
@@ -377,7 +484,7 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
                   <View style={styles.modalGrabber} />
                   <Text style={styles.modalTitle}>Choose a task</Text>
                   <View style={styles.modalSearchRow}>
-                    <SearchIcon size={18} color={INK_SOFT} />
+                    <SearchIcon size={18} color={ink.inkSoft} />
                     <TextInput
                       style={styles.modalSearchInput}
                       placeholder="Search by title, class, or type…"
@@ -432,44 +539,6 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
                 </KeyboardAvoidingView>
               </View>
             </Modal>
-
-            <PulseScrollView
-              customTrack={false}
-              style={styles.scroll}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {classes.length === 0 ? (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyTitle}>No classes yet</Text>
-                  <Text style={styles.emptyBody}>Create a class and add students to see grades.</Text>
-                </View>
-              ) : visibleTasks.length === 0 ? (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyTitle}>No tasks match</Text>
-                  <Text style={styles.emptyBody}>
-                    Adjust class, type, or task filters. Tasks appear when they are assigned to your
-                    classes.
-                  </Text>
-                </View>
-              ) : (
-                visibleTasks.map((task) => {
-                  const cls = classById.get(task.classId);
-                  if (!cls) return null;
-                  return (
-                    <TaskGradesSection
-                      key={task.id}
-                      task={task}
-                      classData={cls}
-                      getGrade={getGrade}
-                      studentSearch={studentSearch}
-                      statusFilter={statusFilter}
-                    />
-                  );
-                })
-              )}
-              <View style={styles.bottomSpacer} />
-            </PulseScrollView>
           </>
         )}
       </View>
@@ -488,6 +557,7 @@ function FilterChip({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { styles, theme } = useViewGradesStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -502,18 +572,21 @@ function FilterChip({
 }
 
 function TaskGradesSection({
+  navigation,
   task,
   classData,
   getGrade,
   studentSearch,
   statusFilter,
 }: {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
   task: ClassTask;
   classData: ClassData;
   getGrade: (classId: string, taskId: string, studentId: string) => TaskGradeRecord | undefined;
   studentSearch: string;
   statusFilter: StatusFilter;
 }) {
+  const { styles, theme, ink } = useViewGradesStyles();
   const roster: ClassStudentRecord[] = classData.students ?? [];
   const q = studentSearch.trim().toLowerCase();
   const filteredRoster = useMemo(() => {
@@ -535,7 +608,15 @@ function TaskGradesSection({
 
   return (
     <View style={styles.classBlock}>
-      <View style={styles.taskHeadRow}>
+      <Pressable
+        style={({ pressed }) => [styles.taskHeadRow, styles.taskHeadPressable, pressed && { opacity: 0.88 }]}
+        onPress={() =>
+          navigation.navigate('TaskGradeReport', { classId: classData.id, taskId: task.id })
+        }
+        android_ripple={{ color: theme.rippleLight }}
+        accessibilityRole="button"
+        accessibilityLabel={`Open grade report for ${task.title}`}
+      >
         <View style={styles.classIconWell}>
           <BookIcon size={20} color={theme.primary} />
         </View>
@@ -548,7 +629,11 @@ function TaskGradesSection({
             {task.dueLabel ? ` · Due ${task.dueLabel}` : ''}
           </Text>
         </View>
-      </View>
+        <View style={styles.taskReportAffordance}>
+          <Text style={styles.taskReportLabel}>Report</Text>
+          <ChevronRightIcon size={18} color={theme.primary} />
+        </View>
+      </Pressable>
 
       {filteredRoster.length === 0 ? (
         <View style={styles.rosterEmpty}>
@@ -594,12 +679,12 @@ function TaskGradesSection({
                   ) : null}
                 </View>
                 <View style={styles.tdStatus}>
-                  <Text style={[styles.statusTxt, { color: gradeColor(status) }]}>
+                  <Text style={[styles.statusTxt, { color: gradeColor(status, theme.primary) }]}>
                     {statusLabel(status)}
                   </Text>
                 </View>
                 <View style={styles.tdGrade}>
-                  <Text style={[styles.gradeBadge, { color: gradeColor(status) }]}>{gradeText}</Text>
+                  <Text style={[styles.gradeBadge, { color: gradeColor(status, theme.primary) }]}>{gradeText}</Text>
                 </View>
               </View>
             );
@@ -609,397 +694,5 @@ function TaskGradesSection({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: CANVAS,
-  },
-  content: {
-    flex: 1,
-  },
-  loading: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 38,
-    fontFamily: F.outfitBlack,
-    color: INK,
-    letterSpacing: -0.8,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  filterPanel: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: R_CARD,
-    borderWidth: 1,
-    borderColor: '#000000',
-    backgroundColor: CANVAS,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    borderRadius: R_INPUT,
-    paddingHorizontal: 12,
-    marginBottom: 14,
-    backgroundColor: CANVAS,
-  },
-  searchInputInner: {
-    flex: 1,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    paddingHorizontal: 8,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK,
-  },
-  searchClear: {
-    padding: 4,
-  },
-  filterPanelHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  filterPanelTitle: {
-    fontSize: 15,
-    fontFamily: F.outfitBold,
-    color: INK,
-    letterSpacing: -0.2,
-  },
-  resetBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    backgroundColor: CANVAS,
-  },
-  resetBtnPressed: {
-    opacity: 0.85,
-  },
-  resetBtnDisabled: {
-    opacity: 0.45,
-  },
-  resetBtnTxt: {
-    fontSize: 13,
-    fontFamily: F.dmSemi,
-    color: theme.primary,
-  },
-  resetBtnTxtDisabled: {
-    color: INK_SOFT,
-  },
-  filterLabel: {
-    fontSize: 11,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingRight: 8,
-    paddingBottom: 4,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    backgroundColor: CANVAS,
-    maxWidth: 280,
-  },
-  chipOn: {
-    backgroundColor: theme.primarySoft,
-    borderColor: theme.primary,
-  },
-  chipTxt: {
-    fontSize: 13,
-    fontFamily: F.dmMedium,
-    color: INK_SOFT,
-  },
-  chipTxtOn: {
-    color: theme.primary,
-  },
-  taskPickerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRadius: R_INPUT,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    backgroundColor: 'rgba(160, 96, 255, 0.06)',
-  },
-  taskPickerBtnText: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: F.dmMedium,
-    color: INK,
-  },
-  modalRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalDimmer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  modalSheetOuter: {
-    maxHeight: '88%',
-    width: '100%',
-  },
-  modalSheet: {
-    backgroundColor: CANVAS,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
-    paddingTop: 8,
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderBottomWidth: 0,
-  },
-  modalGrabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#CBD5E1',
-    marginBottom: 12,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalSearchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    borderRadius: R_INPUT,
-    paddingHorizontal: 10,
-    marginBottom: 8,
-  },
-  modalSearchInput: {
-    flex: 1,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
-    paddingHorizontal: 8,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK,
-  },
-  modalList: {
-    maxHeight: 420,
-  },
-  modalRow: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ROW_DIVIDER,
-  },
-  modalRowOn: {
-    backgroundColor: theme.primarySoft,
-    marginHorizontal: -4,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-    borderBottomWidth: 0,
-  },
-  modalRowTitle: {
-    fontSize: 15,
-    fontFamily: F.dmSemi,
-    color: INK,
-    marginBottom: 4,
-  },
-  modalRowSub: {
-    fontSize: 13,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  modalEmpty: {
-    textAlign: 'center',
-    fontSize: 14,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    paddingVertical: 24,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 100,
-  },
-  emptyCard: {
-    padding: 24,
-    borderRadius: R_CARD,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    backgroundColor: CANVAS,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyBody: {
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  classBlock: {
-    marginBottom: 20,
-    padding: 18,
-    borderRadius: R_CARD,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    backgroundColor: CANVAS,
-  },
-  taskHeadRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-  },
-  classIconWell: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  taskHeadText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  taskTitle: {
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 4,
-    letterSpacing: -0.2,
-  },
-  taskMeta: {
-    fontSize: 13,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    lineHeight: 18,
-  },
-  rosterEmpty: {
-    paddingVertical: 8,
-  },
-  rosterEmptyText: {
-    fontSize: 14,
-    lineHeight: 21,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  table: {
-    borderRadius: 12,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    overflow: 'hidden',
-  },
-  tableHead: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(160, 96, 255, 0.08)',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-  },
-  th: {
-    fontSize: 11,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  thStudent: {
-    flex: 1,
-    minWidth: 0,
-  },
-  thStatus: {
-    width: 76,
-    textAlign: 'center',
-  },
-  thGrade: {
-    width: 64,
-    textAlign: 'right',
-  },
-  tr: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    backgroundColor: CANVAS,
-  },
-  trDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ROW_DIVIDER,
-  },
-  tdStudent: {
-    flex: 1,
-    minWidth: 0,
-    paddingRight: 6,
-  },
-  tdStatus: {
-    width: 76,
-    alignItems: 'center',
-  },
-  statusTxt: {
-    fontSize: 12,
-    fontFamily: F.dmSemi,
-  },
-  studentName: {
-    fontSize: 15,
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  studentEmail: {
-    fontSize: 11,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginTop: 2,
-  },
-  tdGrade: {
-    width: 64,
-    alignItems: 'flex-end',
-  },
-  gradeBadge: {
-    fontSize: 15,
-    fontFamily: F.outfitBold,
-    textAlign: 'right',
-  },
-  bottomSpacer: {
-    height: 24,
-  },
-});
 
 export default ViewGrades;

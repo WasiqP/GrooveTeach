@@ -28,6 +28,22 @@ export interface ClassActivityItem {
   createdAt: string;
 }
 
+/** Saved when attendance is submitted for a calendar day (local YYYY-MM-DD). */
+export type AttendanceEntryStatus = 'present' | 'absent' | 'late';
+
+export interface AttendanceDayEntry {
+  studentId: string;
+  status: AttendanceEntryStatus;
+}
+
+export interface AttendanceDayRecord {
+  id: string;
+  /** Local calendar date, e.g. 2026-04-09 */
+  dateKey: string;
+  takenAt: string;
+  entries: AttendanceDayEntry[];
+}
+
 export interface ClassData {
   id: string;
   name: string;
@@ -45,6 +61,8 @@ export interface ClassData {
   announcements?: ClassAnnouncement[];
   /** Logged actions: announcements, attendance saves, etc. (newest first in UI). */
   activityLog?: ClassActivityItem[];
+  /** One record per dateKey when attendance is saved; latest save wins for that day. */
+  attendanceHistory?: AttendanceDayRecord[];
   createdAt: string;
 }
 

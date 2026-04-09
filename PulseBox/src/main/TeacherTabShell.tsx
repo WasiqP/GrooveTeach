@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import MyClasses from './MyClasses';
 import ViewGrades from './ViewGrades';
 import Settings from './Settings';
 import Quizzes from '../teacher/Quizzes';
+import { useThemeMode } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -18,6 +19,28 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
  */
 const TeacherTabShell: React.FC<Props> = ({ navigation, route }) => {
   const [tab, setTab] = useState<MainTabRoute>('Home');
+  const { ink } = useThemeMode();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        panelHost: {
+          flex: 1,
+          position: 'relative',
+        },
+        layer: {
+          ...StyleSheet.absoluteFillObject,
+        },
+        layerHidden: {
+          opacity: 0,
+        },
+      }),
+    [ink],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -61,22 +84,5 @@ const TeacherTabShell: React.FC<Props> = ({ navigation, route }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  panelHost: {
-    flex: 1,
-    position: 'relative',
-  },
-  layer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  layerHidden: {
-    opacity: 0,
-  },
-});
 
 export default TeacherTabShell;

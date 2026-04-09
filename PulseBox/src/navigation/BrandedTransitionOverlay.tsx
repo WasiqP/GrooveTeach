@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Dimensions,
@@ -7,7 +7,7 @@ import {
   View,
   Easing,
 } from 'react-native';
-import { theme } from '../theme/Colors';
+import { useThemeMode } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,9 +21,36 @@ type Props = {
  * pointerEvents none so it does not block touches. Pairs with native-stack transitions.
  */
 export default function BrandedTransitionOverlay({ tick }: Props) {
+  const { theme } = useThemeMode();
   const veil = useRef(new Animated.Value(0)).current;
   const logo = useRef(new Animated.Value(0.9)).current;
   const runRef = useRef(0);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: {
+          ...StyleSheet.absoluteFillObject,
+          zIndex: 9999,
+          elevation: 9999,
+        },
+        veil: {
+          ...StyleSheet.absoluteFillObject,
+          backgroundColor: theme.primary,
+        },
+        logoWrap: {
+          ...StyleSheet.absoluteFillObject,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        logo: {
+          width: width * 0.42,
+          height: height * 0.14,
+          maxHeight: 120,
+        },
+      }),
+    [theme.primary],
+  );
 
   useEffect(() => {
     if (tick === 0) return;
@@ -88,27 +115,3 @@ export default function BrandedTransitionOverlay({ tick }: Props) {
     </View>
   );
 }
-
-const PURPLE = theme.primary;
-
-const styles = StyleSheet.create({
-  root: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 9999,
-    elevation: 9999,
-  },
-  veil: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: PURPLE,
-  },
-  logoWrap: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: width * 0.42,
-    height: height * 0.14,
-    maxHeight: 120,
-  },
-});

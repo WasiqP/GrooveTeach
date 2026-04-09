@@ -5,8 +5,7 @@ import type { GestureResponderEvent, PanResponderGestureState } from 'react-nati
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { theme } from '../theme/Colors';
-import { ink } from '../theme/typography';
+import { useThemeMode } from '../theme';
 import { useForms } from '../context/FormsContext';
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
@@ -15,7 +14,7 @@ import TrashIcon from '../../assets/images/trash.svg';
 import SwapIcon from '../../assets/images/swap.svg';
 import ArrowUp from '../../assets/images/purple-arrow-up.svg';
 import ArrowDown from '../../assets/images/purple-arrow-down.svg';
-import BackIcon from '../../assets/images/Back.svg';
+import BackButton from '../components/Reusable-Components/BackButton';
 import type { QuestionData, QuestionType } from './QuestionsScreen';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditForm'>;
@@ -26,6 +25,7 @@ const EditForm: React.FC<Props> = ({ route, navigation }) => {
   const { formId } = route.params;
   const { forms, addForm, updateForm } = useForms();
   const form = useMemo(() => forms.find(f => f.id === formId), [forms, formId]);
+  const { ink, theme } = useThemeMode();
 
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -93,6 +93,251 @@ const EditForm: React.FC<Props> = ({ route, navigation }) => {
       return copy;
     });
   };
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        header: {
+          paddingTop: 70,
+          paddingHorizontal: 24,
+          paddingBottom: 8,
+          borderBottomWidth: 1,
+          borderColor: theme.border,
+          flexDirection: 'row',
+          justifyContent: 'space-evenly',
+          alignItems: 'center',
+        },
+        backBtn: {
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: theme.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 10,
+        },
+        headerRight: {
+          flexDirection: 'row',
+          alignItems: 'center',
+        },
+        headerCenter: {
+          flex: 1,
+          alignItems: 'center',
+        },
+        headerAction: {
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        pageHead: {
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: 4,
+        },
+        screenTitle: {
+          fontSize: 16,
+          fontWeight: '700',
+          fontFamily: 'Outfit-Bold',
+          color: ink.ink,
+        },
+        pageTitle: {
+          fontSize: 24,
+          fontWeight: '700',
+          fontFamily: 'Outfit-Bold',
+          color: ink.ink,
+          marginBottom: 6,
+        },
+        pageDesc: {
+          fontSize: 14,
+          fontFamily: 'DMSans-Regular',
+          color: ink.ink,
+          lineHeight: 18,
+        },
+        content: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+          paddingHorizontal: 16,
+          paddingTop: 10,
+          paddingBottom: 160,
+          overflow: 'visible',
+        },
+        toolsRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: 8,
+        },
+        trashTarget: {
+          padding: 6,
+        },
+        rowEndIcon: {
+          paddingHorizontal: 6,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        scrollContent: {
+          padding: 20,
+          paddingTop: 18,
+          paddingBottom: 60,
+        },
+        scrollView: {
+          overflow: 'visible',
+        },
+        pagedList: {
+          paddingHorizontal: 10,
+          paddingTop: 10,
+          paddingBottom: 10,
+          marginBottom: 20,
+        },
+        pageControls: {
+          position: 'absolute',
+          bottom: 40,
+          left: 30,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          zIndex: 30,
+        },
+        pageBtn: {
+          padding: 4,
+          borderRadius: 8,
+        },
+        iconDisabled: {
+          opacity: 0.3,
+        },
+        questionItem: {
+          height: ITEM_HEIGHT,
+          backgroundColor: theme.card,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 14,
+          paddingHorizontal: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 14,
+          shadowColor: 'transparent',
+          elevation: 0,
+        },
+        qLeft: {
+          width: 40,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 12,
+        },
+        qIndex: {
+          width: 28,
+          height: 28,
+          textAlign: 'center',
+          textAlignVertical: 'center',
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: theme.primary,
+          backgroundColor: ink.canvas,
+          fontSize: 14,
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+          overflow: 'hidden',
+          includeFontPadding: false,
+        },
+        qContent: {
+          flex: 1,
+        },
+        qTitle: {
+          fontSize: 16,
+          fontWeight: '600',
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+        },
+        qSubRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: 4,
+          gap: 8,
+          flexWrap: 'wrap',
+        },
+        qSub: {
+          fontSize: 12,
+          fontFamily: 'DMSans-Regular',
+          color: '#888888',
+        },
+        requiredBadge: {
+          backgroundColor: '#FFE5E5',
+          borderWidth: 1,
+          borderColor: '#FF6B6B',
+          borderRadius: 8,
+          paddingHorizontal: 8,
+          paddingVertical: 2,
+        },
+        requiredText: {
+          fontSize: 10,
+          fontFamily: 'DMSans-SemiBold',
+          color: '#D32F2F',
+        },
+        qRight: {
+          width: 40,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        editIconBtn: {
+          width: 32,
+          height: 32,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 8,
+        },
+        modalOverlay: {
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        modalContent: {
+          backgroundColor: theme.card,
+          borderRadius: 16,
+          paddingVertical: 20,
+          paddingHorizontal: 28,
+          alignItems: 'center',
+        },
+        modalIcon: {
+          fontSize: 40,
+          marginBottom: 10,
+        },
+        modalTitle: {
+          fontSize: 16,
+          fontWeight: '700',
+          fontFamily: 'Outfit-Bold',
+          color: ink.ink,
+        },
+        addBtn: {
+          alignSelf: 'flex-start',
+          backgroundColor: theme.card,
+          borderWidth: 2,
+          borderColor: theme.primary,
+          borderRadius: 12,
+          paddingVertical: 10,
+          paddingHorizontal: 14,
+          marginTop: 8,
+          marginLeft: 12,
+          marginBottom: 12,
+          alignItems: 'center',
+        },
+        addBtnText: {
+          fontSize: 14,
+          fontFamily: 'DMSans-Medium',
+          color: theme.primary,
+        },
+        sectionTitle: {
+          display: 'none',
+        },
+      }),
+    [ink, theme],
+  );
 
   const QuestionRow: React.FC<{ q: QuestionData; index: number }> = ({ q, index }) => {
     const translateX = useRef(new Animated.Value(0)).current;
@@ -285,9 +530,13 @@ const EditForm: React.FC<Props> = ({ route, navigation }) => {
       </Svg>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} android_ripple={{ color: 'rgba(160,96,255,0.12)', borderless: true }}>
-          <BackIcon width={16} height={16} stroke={theme.text} />
-        </Pressable>
+        <BackButton
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          size={16}
+          stroke={theme.text}
+          rippleColor="rgba(160,96,255,0.12)"
+        />
         <View style={styles.headerCenter}>
           <Text style={styles.screenTitle}>Edit Your Forms</Text>
         </View>
@@ -405,247 +654,6 @@ const EditForm: React.FC<Props> = ({ route, navigation }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-  },
-  header: {
-    paddingTop: 70,
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderColor: theme.border,
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerAction: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pageHead: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  screenTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    marginBottom: 6,
-  },
-  pageDesc: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#000000',
-    lineHeight: 18,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 160,
-    overflow: 'visible',
-  },
-  toolsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  trashTarget: {
-    padding: 6,
-  },
-  rowEndIcon: {
-    paddingHorizontal: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingTop: 18,
-    paddingBottom: 60,
-  },
-  scrollView: {
-    overflow: 'visible',
-  },
-  pagedList: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
-    marginBottom: 20,
-  },
-  pageControls: {
-    position: 'absolute',
-    bottom: 40,
-    left: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    zIndex: 30,
-  },
-  pageBtn: {
-    padding: 4,
-    borderRadius: 8,
-  },
-  iconDisabled: {
-    opacity: 0.3,
-  },
-  questionItem: {
-    height: ITEM_HEIGHT,
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-    shadowColor: 'transparent',
-    elevation: 0,
-  },
-  qLeft: {
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  qIndex: {
-    width: 28,
-    height: 28,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.primary,
-    backgroundColor: ink.canvas,
-    fontSize: 14,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-    overflow: 'hidden',
-    includeFontPadding: false,
-  },
-  qContent: {
-    flex: 1,
-  },
-  qTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-  },
-  qSubRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  qSub: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: '#888888',
-  },
-  requiredBadge: {
-    backgroundColor: '#FFE5E5',
-    borderWidth: 1,
-    borderColor: '#FF6B6B',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  requiredText: {
-    fontSize: 10,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#D32F2F',
-  },
-  qRight: {
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editIconBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalContent: {
-    backgroundColor: theme.card,
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 28,
-    alignItems: 'center',
-  },
-  modalIcon: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-  },
-  addBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: theme.card,
-    borderWidth: 2,
-    borderColor: theme.primary,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginTop: 8,
-    marginLeft: 12,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  addBtnText: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Medium',
-    color: theme.primary,
-  },
-  sectionTitle: {
-    display: 'none',
-  },
-});
 
 export default EditForm;
 

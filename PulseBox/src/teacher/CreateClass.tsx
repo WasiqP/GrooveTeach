@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   Pressable,
   TextInput,
@@ -23,11 +22,12 @@ import {
   type SchoolTypeOption,
   type ClassStudentRecord,
 } from '../context/ClassesContext';
-import { theme, fonts as F, ink, radius } from '../theme';
 import Svg, { Path } from 'react-native-svg';
+import { useCreateClassStyles } from './useCreateClassStyles';
 import { PulseScrollView } from '../components/PulseScrollView';
 import { usePulseAlert } from '../context/AlertModalContext';
 import BackButton from '../components/Reusable-Components/BackButton';
+import { parseStudentCsvRows as parseCsvRows } from '../utils/parseStudentCsv';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateClass'>;
 
@@ -36,15 +36,6 @@ interface Student {
   name: string;
   email?: string;
 }
-
-const CANVAS = ink.canvas;
-const INK = ink.ink;
-const INK_SOFT = ink.inkSoft;
-const BORDER = ink.borderInk;
-const BW = ink.borderWidth;
-const R_CARD = radius.card;
-const R_INPUT = radius.input;
-const R_BTN = radius.btn;
 
 const SCHOOL_TYPES: SchoolTypeOption[] = ['School', 'College', 'University', 'Others'];
 
@@ -84,36 +75,6 @@ function timeToMinutes(d: Date): number {
   return d.getHours() * 60 + d.getMinutes();
 }
 
-function parseCsvRows(text: string): { name: string; email?: string }[] {
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length === 0) return [];
-  let start = 0;
-  const first = lines[0].toLowerCase();
-  if (first.includes('name') && (first.includes('email') || first.includes('e-mail'))) {
-    start = 1;
-  }
-  const out: { name: string; email?: string }[] = [];
-  for (let i = start; i < lines.length; i++) {
-    const parts = lines[i].split(',').map((s) => s.trim().replace(/^"|"$/g, ''));
-    const name = parts[0];
-    if (!name) continue;
-    out.push({ name, email: parts[1] || undefined });
-  }
-  return out;
-}
-
-const PlusIcon = ({ size = 20, color = theme.white }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M12 5V19M5 12H19"
-      stroke={color}
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
 const XIcon = ({ size = 18, color = '#DC2626' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -126,26 +87,38 @@ const XIcon = ({ size = 18, color = '#DC2626' }: { size?: number; color?: string
   </Svg>
 );
 
-const UserIcon = ({ size = 20, color = theme.white }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
 const CreateClass: React.FC<Props> = ({ navigation }) => {
+  const { styles, ink, theme } = useCreateClassStyles();
+  const PlusIcon = ({ size = 20, color = theme.white }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 5V19M5 12H19"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+  const UserIcon = ({ size = 20, color = theme.white }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+
   const { addClass } = useClasses();
   const { showAlert, showSuccess } = usePulseAlert();
 
@@ -636,9 +609,15 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
             <TouchableWithoutFeedback>
               <View style={styles.csvSheet}>
                 <Text style={styles.csvSheetTitle}>Import from CSV</Text>
+                <Text style={styles.csvBulkHeading}>Adding students in bulk</Text>
+                <Text style={styles.csvBulkBody}>
+                  Paste a full class list at once instead of typing each student. Each line below
+                  becomes one roster entry—useful for spreadsheet exports or copying from another class.
+                </Text>
+                <Text style={styles.csvFormatLabel}>Format</Text>
                 <Text style={styles.csvSheetHelp}>
-                  One student per line: <Text style={styles.csvMono}>Name, email</Text>. Optional header row
-                  with “name” and “email”.
+                  One student per line: <Text style={styles.csvMono}>Name, email</Text>. Email is optional.
+                  Optional header row with “name” and “email” is supported.
                 </Text>
                 <TextInput
                   style={styles.csvTextarea}
@@ -665,412 +644,5 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: CANVAS,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingLeft: 8,
-    paddingTop: 14,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ink.rowDivider,
-    backgroundColor: CANVAS,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
-  },
-  headerTitle: {
-    flex: 1,
-    marginLeft: 2,
-    fontSize: 20,
-    fontFamily: F.outfitBold,
-    color: INK,
-    letterSpacing: -0.3,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 48,
-  },
-  section: {
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 8,
-  },
-  sectionFirst: {
-    paddingTop: 20,
-  },
-  sectionEyebrow: {
-    fontSize: 11,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 14,
-  },
-  sectionLead: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginBottom: 18,
-    maxWidth: 400,
-  },
-  field: {
-    marginBottom: 22,
-  },
-  label: {
-    fontSize: 15,
-    fontFamily: F.dmSemi,
-    color: INK,
-    marginBottom: 10,
-  },
-  labelSpaced: {
-    marginTop: 8,
-  },
-  input: {
-    backgroundColor: CANVAS,
-    borderWidth: BW,
-    borderColor: BORDER,
-    borderRadius: R_INPUT,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK,
-  },
-  gradeScrollContent: {
-    paddingVertical: 4,
-    gap: 10,
-    paddingRight: 8,
-  },
-  gradeChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: BW,
-    borderColor: BORDER,
-    backgroundColor: CANVAS,
-    marginRight: 8,
-  },
-  gradeChipOn: {
-    backgroundColor: theme.primary,
-    borderColor: theme.primary,
-  },
-  gradeChipTxt: {
-    fontSize: 14,
-    fontFamily: F.dmMedium,
-    color: INK_SOFT,
-  },
-  gradeChipTxtOn: {
-    color: theme.white,
-  },
-  dayGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 4,
-  },
-  dayChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: R_BTN,
-    borderWidth: BW,
-    borderColor: BORDER,
-    backgroundColor: CANVAS,
-    minWidth: 52,
-    alignItems: 'center',
-  },
-  dayChipOn: {
-    backgroundColor: theme.primarySoft,
-    borderColor: theme.primary,
-  },
-  dayChipTxt: {
-    fontSize: 14,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-  },
-  dayChipTxtOn: {
-    color: theme.primary,
-  },
-  timeTrigger: {
-    borderWidth: BW,
-    borderColor: BORDER,
-    borderRadius: R_CARD,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    backgroundColor: CANVAS,
-  },
-  timeTriggerLabel: {
-    fontSize: 12,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  timeTriggerValue: {
-    fontSize: 28,
-    fontFamily: F.outfitBold,
-    color: INK,
-    letterSpacing: -0.5,
-  },
-  timeTriggerHint: {
-    marginTop: 8,
-    fontSize: 13,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  roomCard: {
-    borderWidth: BW,
-    borderColor: BORDER,
-    borderRadius: R_CARD,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    backgroundColor: CANVAS,
-  },
-  roomCardHint: {
-    fontSize: 12,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-  },
-  roomInputInner: {
-    fontSize: 17,
-    fontFamily: F.dmMedium,
-    color: INK,
-    paddingVertical: 0,
-    margin: 0,
-    minHeight: 24,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  timeSheet: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: CANVAS,
-    borderRadius: R_CARD + 4,
-    borderWidth: BW,
-    borderColor: BORDER,
-    padding: 20,
-    paddingBottom: 16,
-  },
-  timeSheetTitle: {
-    fontSize: 20,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  iosPicker: {
-    height: 180,
-  },
-  timeSheetDone: {
-    marginTop: 8,
-    backgroundColor: theme.primary,
-    borderRadius: R_BTN,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  timeSheetDoneTxt: {
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-    color: theme.white,
-  },
-  studentsSection: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  studentActions: {
-    marginBottom: 18,
-  },
-  csvBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: R_BTN,
-    borderWidth: BW,
-    borderColor: theme.primary,
-    backgroundColor: theme.primarySoft,
-  },
-  csvBtnTxt: {
-    fontSize: 15,
-    fontFamily: F.dmSemi,
-    color: theme.primary,
-  },
-  subLabel: {
-    fontSize: 14,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    marginBottom: 10,
-  },
-  addRow: {
-    gap: 12,
-    marginBottom: 8,
-  },
-  addInput: {
-    marginBottom: 0,
-  },
-  addCircle: {
-    alignSelf: 'flex-end',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  roster: {
-    marginTop: 22,
-    paddingTop: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: ink.rowDivider,
-  },
-  rosterTitle: {
-    fontSize: 15,
-    fontFamily: F.dmSemi,
-    color: INK,
-    marginBottom: 14,
-  },
-  studentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: R_CARD,
-    borderWidth: BW,
-    borderColor: BORDER,
-    marginBottom: 10,
-    backgroundColor: CANVAS,
-  },
-  studentLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  studentTxt: {
-    flex: 1,
-    minWidth: 0,
-  },
-  studentName: {
-    fontSize: 16,
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  studentEmail: {
-    fontSize: 13,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginTop: 2,
-  },
-  createBtn: {
-    marginHorizontal: 24,
-    marginTop: 28,
-    backgroundColor: theme.primary,
-    borderRadius: R_BTN,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  createBtnTxt: {
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-    color: theme.white,
-  },
-  bottomPad: {
-    height: 32,
-  },
-  csvSheet: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: CANVAS,
-    borderRadius: R_CARD + 4,
-    borderWidth: BW,
-    borderColor: BORDER,
-    padding: 20,
-  },
-  csvSheetTitle: {
-    fontSize: 20,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 10,
-  },
-  csvSheetHelp: {
-    fontSize: 14,
-    lineHeight: 21,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginBottom: 14,
-  },
-  csvMono: {
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  csvTextarea: {
-    minHeight: 140,
-    borderWidth: BW,
-    borderColor: BORDER,
-    borderRadius: R_INPUT,
-    padding: 14,
-    fontSize: 14,
-    fontFamily: F.dmRegular,
-    color: INK,
-    marginBottom: 18,
-  },
-  csvActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  csvCancel: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  csvCancelTxt: {
-    fontSize: 16,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-  },
-  csvConfirm: {
-    backgroundColor: theme.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: R_BTN,
-  },
-  csvConfirmTxt: {
-    fontSize: 16,
-    fontFamily: F.outfitBold,
-    color: theme.white,
-  },
-});
 
 export default CreateClass;

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import BackButton from './Reusable-Components/BackButton';
-import { ink } from '../theme';
+import { useThemeMode } from '../theme';
 
 /** Minimal navigation shape for back affordance on tab-root screens */
 export type TabHeaderNavigation = {
@@ -32,6 +32,39 @@ export default function TabScreenHeaderBar({
   paddingHorizontal = 20,
   style,
 }: Props) {
+  const { ink } = useThemeMode();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        wrap: {
+          paddingBottom: 16,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: ink.rowDivider,
+          backgroundColor: ink.canvas,
+        },
+        row: {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+        },
+        main: {
+          flex: 1,
+          minWidth: 0,
+          paddingLeft: 2,
+          justifyContent: 'center',
+        },
+        rightSlot: {
+          marginLeft: 4,
+        },
+        rightSpacer: {
+          width: 40,
+        },
+        backMuted: {
+          opacity: 0.32,
+        },
+      }),
+    [ink],
+  );
+
   const canBack = navigation.canGoBack();
   return (
     <View style={[styles.wrap, { paddingTop, paddingHorizontal }, style]}>
@@ -48,32 +81,3 @@ export default function TabScreenHeaderBar({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ink.rowDivider,
-    backgroundColor: ink.canvas,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  main: {
-    flex: 1,
-    minWidth: 0,
-    paddingLeft: 2,
-    justifyContent: 'center',
-  },
-  rightSlot: {
-    marginLeft: 4,
-  },
-  /** Keeps title block aligned when no right control (matches ~44px control) */
-  rightSpacer: {
-    width: 40,
-  },
-  backMuted: {
-    opacity: 0.32,
-  },
-});

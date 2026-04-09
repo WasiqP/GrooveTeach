@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { theme, fonts as F, ink, radius } from '../theme';
+import { fonts as F, radius, useThemeMode } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
 import { usePulseAlert } from '../context/AlertModalContext';
 import { PulseScrollView } from '../components/PulseScrollView';
@@ -20,6 +20,7 @@ import { PulseScrollView } from '../components/PulseScrollView';
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 const SignUp: React.FC<Props> = ({ navigation }) => {
+  const { ink, theme } = useThemeMode();
   const { showAlert } = usePulseAlert();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,6 +34,140 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
       navigation.navigate('GetStarted');
     }
   };
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        flex: { flex: 1 },
+        screen: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        backBtn: {
+          alignSelf: 'flex-start',
+          marginBottom: 2,
+        },
+        scrollContent: {
+          paddingHorizontal: 28,
+          paddingTop: 0,
+          paddingBottom: 18,
+          maxWidth: 480,
+          width: '100%',
+          alignSelf: 'center',
+        },
+        brandRow: {
+          alignItems: 'center',
+          marginBottom: 6,
+        },
+        logo: {
+          width: 118,
+          height: 100,
+          maxWidth: '100%',
+        },
+        inner: {
+          width: '100%',
+        },
+        sub: {
+          fontSize: 15,
+          fontFamily: F.dmMedium,
+          color: ink.inkSoft,
+          marginBottom: 4,
+        },
+        heading: {
+          fontSize: 34,
+          lineHeight: 40,
+          fontFamily: F.outfitBlack,
+          color: ink.ink,
+          marginTop: 0,
+          marginBottom: 12,
+          letterSpacing: -0.8,
+        },
+        input: {
+          width: '100%',
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          borderRadius: radius.input,
+          paddingHorizontal: 16,
+          paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+          fontSize: 15,
+          fontFamily: F.dmRegular,
+          color: ink.ink,
+          marginTop: 10,
+          backgroundColor: ink.canvas,
+        },
+        inputFirst: {
+          marginTop: 0,
+        },
+        primaryBtn: {
+          marginTop: 16,
+          backgroundColor: theme.primary,
+          paddingVertical: 14,
+          borderRadius: radius.btn,
+          alignItems: 'center',
+        },
+        primaryLabel: {
+          color: theme.white,
+          fontSize: 17,
+          fontFamily: F.outfitBold,
+        },
+        socialHint: {
+          marginTop: 12,
+          fontSize: 13,
+          textAlign: 'center',
+          color: ink.inkSoft,
+          fontFamily: F.dmMedium,
+        },
+        socialRow: {
+          flexDirection: 'row',
+          justifyContent: 'center',
+          gap: 16,
+          marginTop: 8,
+        },
+        socialBtn: {
+          backgroundColor: ink.borderInk,
+          width: 92,
+          paddingVertical: 10,
+          borderRadius: radius.btn,
+          alignItems: 'center',
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+        },
+        socialText: {
+          color: theme.white,
+          fontSize: 18,
+          fontFamily: F.dmBold,
+        },
+        terms: {
+          marginTop: 12,
+          fontSize: 12,
+          lineHeight: 17,
+          textAlign: 'center',
+          color: ink.inkSoft,
+          fontFamily: F.dmRegular,
+          paddingHorizontal: 4,
+        },
+        link: {
+          color: theme.primary,
+          fontFamily: F.dmBold,
+        },
+        loginRow: {
+          marginTop: 14,
+          paddingBottom: 6,
+          alignItems: 'center',
+        },
+        alt: {
+          fontSize: 14,
+          textAlign: 'center',
+          color: ink.inkSoft,
+          fontFamily: F.dmRegular,
+        },
+        altLink: {
+          color: theme.primary,
+          fontFamily: F.outfitBold,
+        },
+      }),
+    [ink, theme],
+  );
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -152,135 +287,5 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  screen: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    marginBottom: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 0,
-    paddingBottom: 18,
-    maxWidth: 480,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  brandRow: {
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  logo: {
-    width: 118,
-    height: 100,
-    maxWidth: '100%',
-  },
-  inner: {
-    width: '100%',
-  },
-  sub: {
-    fontSize: 15,
-    fontFamily: F.dmMedium,
-    color: ink.inkSoft,
-    marginBottom: 4,
-  },
-  heading: {
-    fontSize: 34,
-    lineHeight: 40,
-    fontFamily: F.outfitBlack,
-    color: ink.ink,
-    marginTop: 0,
-    marginBottom: 12,
-    letterSpacing: -0.8,
-  },
-  input: {
-    width: '100%',
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-    borderRadius: radius.input,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: ink.ink,
-    marginTop: 10,
-    backgroundColor: ink.canvas,
-  },
-  inputFirst: {
-    marginTop: 0,
-  },
-  primaryBtn: {
-    marginTop: 16,
-    backgroundColor: theme.primary,
-    paddingVertical: 14,
-    borderRadius: radius.btn,
-    alignItems: 'center',
-  },
-  primaryLabel: {
-    color: theme.white,
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-  },
-  socialHint: {
-    marginTop: 12,
-    fontSize: 13,
-    textAlign: 'center',
-    color: ink.inkSoft,
-    fontFamily: F.dmMedium,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 8,
-  },
-  socialBtn: {
-    backgroundColor: ink.borderInk,
-    width: 92,
-    paddingVertical: 10,
-    borderRadius: radius.btn,
-    alignItems: 'center',
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-  },
-  socialText: {
-    color: theme.white,
-    fontSize: 18,
-    fontFamily: F.dmBold,
-  },
-  terms: {
-    marginTop: 12,
-    fontSize: 12,
-    lineHeight: 17,
-    textAlign: 'center',
-    color: ink.inkSoft,
-    fontFamily: F.dmRegular,
-    paddingHorizontal: 4,
-  },
-  link: {
-    color: theme.primary,
-    fontFamily: F.dmBold,
-  },
-  loginRow: {
-    marginTop: 14,
-    paddingBottom: 6,
-    alignItems: 'center',
-  },
-  alt: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: ink.inkSoft,
-    fontFamily: F.dmRegular,
-  },
-  altLink: {
-    color: theme.primary,
-    fontFamily: F.outfitBold,
-  },
-});
 
 export default SignUp;

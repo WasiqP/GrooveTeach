@@ -4,7 +4,10 @@
  */
 import { StyleSheet } from 'react-native';
 import { theme } from './Colors';
-import { fonts as F, ink, radius } from './typography';
+import { fonts as F, radius } from './typography';
+import { lightPalette } from './palettes';
+
+const ink = lightPalette.ink;
 
 export const ui = StyleSheet.create({
   screen: {

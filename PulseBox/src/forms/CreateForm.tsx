@@ -1,336 +1,606 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import type { ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  Modal,
+  FlatList,
+  Platform,
+  ScrollView,
+  KeyboardAvoidingView,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { theme } from '../theme';
-import { ink } from '../theme/typography';
-import { PulseScrollView } from '../components/PulseScrollView';
+import { fonts as F, radius, useThemeMode } from '../theme';
+import BackButton from '../components/Reusable-Components/BackButton';
+import FormIcon from '../components/FormIcons';
+import { useForms, type FormData } from '../context/FormsContext';
+import { useClasses } from '../context/ClassesContext';
+import { usePulseAlert } from '../context/AlertModalContext';
+import type { QuestionData, QuestionType } from './QuestionsScreen';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateForm'>;
 
+type CreateTaskKind = 'quiz' | 'assignment' | 'test' | 'survey' | 'poll';
+
+const TASK_TYPES: { id: CreateTaskKind; label: string }[] = [
+  { id: 'quiz', label: 'Quiz' },
+  { id: 'assignment', label: 'Assignment' },
+  { id: 'test', label: 'Test' },
+  { id: 'survey', label: 'Survey' },
+  { id: 'poll', label: 'Poll' },
+];
+
+const DUE_OPTIONS: { id: string; label: string }[] = [
+  { id: 'today', label: 'Today' },
+  { id: 'tomorrow', label: 'Tomorrow' },
+  { id: 'week', label: 'This week' },
+  { id: 'two_weeks', label: '2 wks' },
+  { id: 'month', label: 'Month' },
+  { id: 'custom', label: 'Later' },
+];
+
+const FORMAT_OPTIONS: { id: string; label: string }[] = [
+  { id: 'multiple_choice', label: 'Multi choice' },
+  { id: 'true_false', label: 'T/F' },
+  { id: 'short_answer', label: 'Short' },
+  { id: 'essay', label: 'Essay' },
+  { id: 'matching', label: 'Match' },
+  { id: 'all', label: 'Mix' },
+];
+
+const ICON_IDS = ['clipboard', 'star', 'message', 'chart', 'target', 'trophy'] as const;
+
 const CreateForm: React.FC<Props> = ({ navigation }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<any>({});
-  const scrollViewRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
+  const { ink, theme } = useThemeMode();
+  const { addForm } = useForms();
+  const { classes } = useClasses();
+  const { showAlert } = usePulseAlert();
 
-  const questions = [
-    {
-      title: 'What type of assessment are you creating?',
-      subtitle: 'Select the type that best fits your needs',
-      options: [
-        { id: 'quiz', title: 'Quiz', description: 'Short assessment with quick questions' },
-        { id: 'assignment', title: 'Assignment', description: 'Longer project or homework' },
-        { id: 'test', title: 'Test', description: 'Formal examination or assessment' },
-        { id: 'survey', title: 'Survey', description: 'Collect feedback or opinions' },
-        { id: 'poll', title: 'Poll', description: 'Quick question with multiple choices' },
-      ],
-    },
-    {
-      title: 'Which class is this for?',
-      subtitle: 'Select the class or create for all classes',
-      options: [
-        { id: 'math', title: 'Mathematics', description: 'Math-related assessments' },
-        { id: 'english', title: 'English', description: 'Language and literature' },
-        { id: 'science', title: 'Science', description: 'Science subjects' },
-        { id: 'history', title: 'History', description: 'Social studies and history' },
-        { id: 'all', title: 'All Classes', description: 'Use across multiple classes' },
-        { id: 'other', title: 'Other Subject', description: 'Different subject area' },
-      ],
-    },
-    {
-      title: 'What\'s the main topic?',
-      subtitle: 'What will this assessment cover?',
-      options: [
-        { id: 'chapter', title: 'Chapter Review', description: 'Review specific chapter content' },
-        { id: 'unit', title: 'Unit Test', description: 'Test entire unit knowledge' },
-        { id: 'midterm', title: 'Midterm Exam', description: 'Mid-semester assessment' },
-        { id: 'final', title: 'Final Exam', description: 'End of term assessment' },
-        { id: 'homework', title: 'Homework', description: 'Practice and reinforcement' },
-        { id: 'project', title: 'Project', description: 'Long-term project assessment' },
-      ],
-    },
-    {
-      title: 'What question types do you need?',
-      subtitle: 'Select the types of questions you want to include',
-      options: [
-        { id: 'multiple_choice', title: 'Multiple Choice', description: 'Select one correct answer' },
-        { id: 'true_false', title: 'True/False', description: 'Binary choice questions' },
-        { id: 'short_answer', title: 'Short Answer', description: 'Brief text responses' },
-        { id: 'essay', title: 'Essay', description: 'Long-form written responses' },
-        { id: 'matching', title: 'Matching', description: 'Match items together' },
-        { id: 'all', title: 'All Types', description: 'Mix of different question types' },
-      ],
-    },
-    {
-      title: 'When is this due?',
-      subtitle: 'Set a deadline for submissions',
-      options: [
-        { id: 'today', title: 'Today', description: 'Due by end of day' },
-        { id: 'tomorrow', title: 'Tomorrow', description: 'Due tomorrow' },
-        { id: 'week', title: 'This Week', description: 'Due within 7 days' },
-        { id: 'two_weeks', title: 'Two Weeks', description: 'Due within 14 days' },
-        { id: 'month', title: 'This Month', description: 'Due within 30 days' },
-        { id: 'custom', title: 'Custom Date', description: 'Set your own deadline' },
-      ],
-    },
-  ];
+  const [taskKind, setTaskKind] = useState<CreateTaskKind>('quiz');
+  const [classId, setClassId] = useState<string | 'all'>(
+    classes.length > 0 ? classes[0].id : 'all',
+  );
+  const [title, setTitle] = useState('');
+  const [focusTopic, setFocusTopic] = useState('');
+  const [duePreset, setDuePreset] = useState<string>('week');
+  const [formatIds, setFormatIds] = useState<string[]>(['multiple_choice']);
+  const [iconId, setIconId] = useState<string>('clipboard');
+  const [classModalOpen, setClassModalOpen] = useState(false);
 
-  const handleSelectOption = (optionId: string) => {
-    const currentAnswers = answers[currentStep] || [];
-    const isSelected = currentAnswers.includes(optionId);
-    
-    let updatedAnswers;
-    if (isSelected) {
-      // Remove if already selected
-      updatedAnswers = {
-        ...answers,
-        [currentStep]: currentAnswers.filter((id: string) => id !== optionId)
-      };
-    } else {
-      // Add to selection
-      updatedAnswers = {
-        ...answers,
-        [currentStep]: [...currentAnswers, optionId]
-      };
+  const sortedClasses = useMemo(
+    () => [...classes].sort((a, b) => a.name.localeCompare(b.name)),
+    [classes],
+  );
+
+  const selectedClassName = useMemo(() => {
+    if (classId === 'all') return 'All classes';
+    const c = classes.find((x) => x.id === classId);
+    return c?.name ?? 'Select a class';
+  }, [classId, classes]);
+
+  const toggleFormat = useCallback((id: string) => {
+    setFormatIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+
+  const starterQuestion = useMemo<QuestionData>(
+    () => ({
+      id: '1',
+      title: 'Question 1',
+      type: 'shortText' as QuestionType,
+      required: false,
+    }),
+    [],
+  );
+
+  const handleCreate = useCallback(async () => {
+    if (classes.length === 0) {
+      showAlert({
+        title: 'Add a class first',
+        message: 'Create a class from Home or My classes, then you can attach this task.',
+        buttons: [{ text: 'OK', style: 'default' }],
+      });
+      return;
     }
-    setAnswers(updatedAnswers);
-  };
-
-  const handleNext = () => {
-    if (currentStep < questions.length - 1) {
-      setCurrentStep(currentStep + 1);
-      // Scroll to top
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      // All questions answered, proceed to form builder
-      navigation.navigate('FormBuilder', { answers });
+    const name = title.trim();
+    if (!name) {
+      showAlert({
+        title: 'Name required',
+        message: 'Give this task a title so you can find it later.',
+        buttons: [{ text: 'OK', style: 'default' }],
+      });
+      return;
     }
-  };
 
-  const hasSelection = answers[currentStep] && answers[currentStep].length > 0;
+    const id = `${Date.now()}`;
+    const cls = classId === 'all' ? null : classes.find((c) => c.id === classId);
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-      // Scroll to top
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      navigation.goBack();
-    }
-  };
+    const formData: FormData = {
+      id,
+      name,
+      iconId,
+      createdAt: new Date().toISOString(),
+      answers: {
+        taskKind,
+        assessmentType: taskKind,
+        classId: classId === 'all' ? 'all' : classId,
+        className: cls?.name ?? 'All classes',
+        focusTopic: focusTopic.trim() || undefined,
+        duePreset,
+        questionFormats: formatIds,
+        questions: [starterQuestion],
+      },
+    };
 
-  const currentQuestion = questions[currentStep];
-  const selectedAnswers = answers[currentStep] || [];
+    await addForm(formData);
+    navigation.replace('EditForm', { formId: id });
+  }, [
+    classes,
+    classId,
+    title,
+    iconId,
+    taskKind,
+    focusTopic,
+    duePreset,
+    formatIds,
+    starterQuestion,
+    addForm,
+    navigation,
+    showAlert,
+  ]);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        keyboardView: {
+          flex: 1,
+        },
+        scrollContent: {
+          paddingTop: 14,
+          flexGrow: 1,
+        },
+        headerRow: {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: 4,
+          marginBottom: 12,
+        },
+        headerBack: {
+          marginTop: Platform.OS === 'ios' ? 2 : 0,
+        },
+        headerTextCol: {
+          flex: 1,
+          minWidth: 0,
+          justifyContent: 'center',
+          paddingTop: Platform.OS === 'ios' ? 6 : 4,
+        },
+        heroTitle: {
+          fontSize: 22,
+          fontFamily: F.outfitBold,
+          color: ink.ink,
+          letterSpacing: -0.45,
+          marginBottom: 3,
+          lineHeight: 26,
+        },
+        heroSub: {
+          fontSize: 13,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+          lineHeight: 18,
+        },
+        sectionLabel: {
+          fontSize: 11,
+          fontFamily: F.dmSemi,
+          color: ink.inkSoft,
+          letterSpacing: 0.7,
+          textTransform: 'uppercase',
+          marginBottom: 8,
+          marginTop: 12,
+        },
+        sectionLabelFirst: {
+          marginTop: 0,
+        },
+        hScroll: {
+          marginHorizontal: -4,
+        },
+        hScrollInner: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          paddingVertical: 2,
+          paddingRight: 12,
+        },
+        typeChip: {
+          paddingVertical: 8,
+          paddingHorizontal: 13,
+          borderRadius: 18,
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          backgroundColor: theme.card,
+        },
+        typeChipOn: {
+          borderColor: theme.primary,
+          backgroundColor: theme.primarySoft,
+        },
+        typeChipLabel: {
+          fontSize: 13,
+          fontFamily: F.dmSemi,
+          color: ink.ink,
+        },
+        field: {
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          borderRadius: radius.input,
+          paddingHorizontal: 12,
+          paddingVertical: Platform.OS === 'ios' ? 11 : 9,
+          fontSize: 15,
+          fontFamily: F.dmRegular,
+          color: ink.ink,
+          backgroundColor: theme.card,
+        },
+        fieldMulti: {
+          minHeight: 56,
+          maxHeight: 72,
+          textAlignVertical: 'top',
+        },
+        classTrigger: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          borderRadius: radius.input,
+          paddingHorizontal: 12,
+          paddingVertical: 12,
+          backgroundColor: theme.card,
+        },
+        classTriggerText: {
+          fontSize: 15,
+          fontFamily: F.dmSemi,
+          color: ink.ink,
+          flex: 1,
+        },
+        iconBtn: {
+          width: 46,
+          height: 46,
+          borderRadius: 11,
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.card,
+        },
+        iconBtnOn: {
+          borderColor: theme.primary,
+          backgroundColor: theme.primarySoft,
+        },
+        dueChip: {
+          paddingVertical: 7,
+          paddingHorizontal: 12,
+          borderRadius: 18,
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          backgroundColor: theme.card,
+        },
+        dueChipOn: {
+          borderColor: theme.primary,
+          backgroundColor: theme.primarySoft,
+        },
+        dueChipTxt: {
+          fontSize: 12,
+          fontFamily: F.dmMedium,
+          color: ink.ink,
+        },
+        formatChip: {
+          paddingVertical: 7,
+          paddingHorizontal: 10,
+          borderRadius: 14,
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          backgroundColor: theme.card,
+        },
+        formatChipOn: {
+          borderColor: theme.primary,
+          backgroundColor: theme.primarySoft,
+        },
+        formatChipTxt: {
+          fontSize: 11,
+          fontFamily: F.dmMedium,
+          color: ink.inkSoft,
+        },
+        formatChipTxtOn: {
+          color: theme.primary,
+        },
+        cta: {
+          marginTop: 22,
+          backgroundColor: theme.primary,
+          borderRadius: radius.input,
+          paddingVertical: 14,
+          alignItems: 'center',
+        },
+        ctaText: {
+          fontSize: 15,
+          fontFamily: F.outfitBold,
+          color: theme.white,
+          letterSpacing: 0.15,
+        },
+        hintBelowCta: {
+          marginTop: 10,
+          fontSize: 12,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+          textAlign: 'center',
+          lineHeight: 17,
+        },
+        modalRoot: {
+          flex: 1,
+          justifyContent: 'flex-end',
+          backgroundColor: 'transparent',
+        },
+        modalSheet: {
+          backgroundColor: ink.canvas,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          maxHeight: '72%',
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          borderBottomWidth: 0,
+        },
+        modalTitle: {
+          fontSize: 18,
+          fontFamily: F.outfitBold,
+          color: ink.ink,
+          marginBottom: 12,
+          textAlign: 'center',
+        },
+        modalRow: {
+          paddingVertical: 14,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: ink.rowDivider,
+        },
+        modalRowOn: {
+          backgroundColor: theme.primarySoft,
+          marginHorizontal: -8,
+          paddingHorizontal: 8,
+          borderRadius: 10,
+          borderBottomWidth: 0,
+        },
+        modalRowText: {
+          fontSize: 16,
+          fontFamily: F.dmSemi,
+          color: ink.ink,
+        },
+        modalClose: {
+          marginTop: 8,
+          paddingVertical: 14,
+          alignItems: 'center',
+        },
+        modalCloseTxt: {
+          fontSize: 16,
+          fontFamily: F.dmSemi,
+          color: theme.primary,
+        },
+      }),
+    [ink, theme],
+  );
+
+  const scrollContentPadded = useMemo(
+    () => [
+      styles.scrollContent,
+      {
+        paddingLeft: 20 + insets.left,
+        paddingRight: 20 + insets.right,
+        paddingBottom: Math.max(insets.bottom, 16) + 32,
+      },
+    ],
+    [styles.scrollContent, insets.left, insets.right, insets.bottom],
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <PulseScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${((currentStep + 1) / questions.length) * 100}%` }]} />
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          contentContainerStyle={scrollContentPadded}
+        >
+          <View style={styles.headerRow}>
+            <View style={styles.headerBack}>
+              <BackButton onPress={() => navigation.goBack()} />
+            </View>
+            <View style={styles.headerTextCol}>
+              <Text style={styles.heroTitle}>New task</Text>
+              <Text style={styles.heroSub}>
+                Pick type and class, name it, then edit questions on the next screen.
+              </Text>
+            </View>
           </View>
-          <Text style={styles.progressText}>Step {currentStep + 1} of {questions.length}</Text>
-        </View>
 
-        {/* Back Button */}
-        <Pressable onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backIcon}>←</Text>
-        </Pressable>
-
-        {/* Question Content */}
-        <View style={styles.content}>
-          <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
-          <Text style={styles.questionSubtitle}>{currentQuestion.subtitle}</Text>
-
-          {/* Options */}
-          <View style={styles.optionsContainer}>
-            {currentQuestion.options.map((option, index) => {
-              const isSelected = selectedAnswers.includes(option.id);
+          <Text style={[styles.sectionLabel, styles.sectionLabelFirst]}>Task type</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.hScroll}
+            contentContainerStyle={styles.hScrollInner}
+          >
+            {TASK_TYPES.map((t) => {
+              const on = taskKind === t.id;
               return (
                 <Pressable
-                  key={option.id}
-                  style={[styles.optionCard, isSelected && styles.optionCardSelected]}
-                  android_ripple={{ color: 'rgba(160,96,255,0.1)' }}
-                  onPress={() => handleSelectOption(option.id)}
+                  key={t.id}
+                  style={[styles.typeChip, on && styles.typeChipOn]}
+                  onPress={() => setTaskKind(t.id)}
+                  android_ripple={{ color: theme.rippleLight }}
                 >
-                  <View style={styles.optionContent}>
-                    <View style={styles.optionTextContainer}>
-                      <Text style={styles.optionTitle}>{option.title}</Text>
-                      <Text style={styles.optionDescription}>{option.description}</Text>
-                    </View>
-                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                      {isSelected && <View style={styles.checkboxInner} />}
-                    </View>
-                  </View>
+                  <Text style={styles.typeChipLabel}>{t.label}</Text>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
 
-          {/* Next/Continue Button */}
-          <View style={styles.buttonContainer}>
-            <Pressable
-              style={[styles.nextButton, !hasSelection && styles.nextButtonDisabled]}
-              onPress={handleNext}
-              android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
-              disabled={!hasSelection}
-            >
-              <Text style={[styles.nextButtonText, !hasSelection && styles.nextButtonTextDisabled]}>
-                {currentStep === questions.length - 1 ? 'Continue' : 'Next'}
-              </Text>
+          <Text style={styles.sectionLabel}>Class</Text>
+          <Pressable
+            style={styles.classTrigger}
+            onPress={() => classes.length > 0 && setClassModalOpen(true)}
+            disabled={classes.length === 0}
+            android_ripple={{ color: theme.rippleLight }}
+          >
+            <Text style={styles.classTriggerText} numberOfLines={2}>
+              {classes.length === 0 ? 'Create a class first' : selectedClassName}
+            </Text>
+            <Text style={{ fontSize: 17, color: ink.inkSoft }}>›</Text>
+          </Pressable>
+
+          <Text style={styles.sectionLabel}>Title</Text>
+          <TextInput
+            style={styles.field}
+            placeholder="e.g. Chapter 5 quiz"
+            placeholderTextColor={ink.placeholder}
+            value={title}
+            onChangeText={setTitle}
+          />
+
+          <Text style={styles.sectionLabel}>Topic (optional)</Text>
+          <TextInput
+            style={[styles.field, styles.fieldMulti]}
+            placeholder="What should this cover?"
+            placeholderTextColor={ink.placeholder}
+            value={focusTopic}
+            onChangeText={setFocusTopic}
+            multiline
+          />
+
+          <Text style={styles.sectionLabel}>Due</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.hScroll}
+            contentContainerStyle={styles.hScrollInner}
+          >
+            {DUE_OPTIONS.map((d) => {
+              const on = duePreset === d.id;
+              return (
+                <Pressable
+                  key={d.id}
+                  style={[styles.dueChip, on && styles.dueChipOn]}
+                  onPress={() => setDuePreset(d.id)}
+                  android_ripple={{ color: theme.rippleLight }}
+                >
+                  <Text style={styles.dueChipTxt}>{d.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Text style={styles.sectionLabel}>Question styles (optional)</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.hScroll}
+            contentContainerStyle={styles.hScrollInner}
+          >
+            {FORMAT_OPTIONS.map((f) => {
+              const on = formatIds.includes(f.id);
+              return (
+                <Pressable
+                  key={f.id}
+                  style={[styles.formatChip, on && styles.formatChipOn]}
+                  onPress={() => toggleFormat(f.id)}
+                  android_ripple={{ color: theme.rippleLight }}
+                >
+                  <Text style={[styles.formatChipTxt, on && styles.formatChipTxtOn]}>{f.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Text style={styles.sectionLabel}>Icon</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.hScroll}
+            contentContainerStyle={styles.hScrollInner}
+          >
+            {ICON_IDS.map((id) => {
+              const on = iconId === id;
+              return (
+                <Pressable
+                  key={id}
+                  style={[styles.iconBtn, on && styles.iconBtnOn]}
+                  onPress={() => setIconId(id)}
+                  android_ripple={{ color: theme.rippleLight }}
+                >
+                  <FormIcon iconId={id} size={22} color={on ? theme.primary : ink.inkSoft} />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Pressable style={styles.cta} onPress={handleCreate} android_ripple={{ color: theme.rippleLight }}>
+            <Text style={styles.ctaText}>Create task &amp; edit questions</Text>
+          </Pressable>
+          <Text style={styles.hintBelowCta}>
+            Saves your task and opens the question editor. Add, reorder, or delete questions there.
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal
+        visible={classModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setClassModalOpen(false)}
+      >
+        <Pressable style={styles.modalRoot} onPress={() => setClassModalOpen(false)}>
+          <Pressable
+            style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, 16) + 20 }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={styles.modalTitle}>Assign to class</Text>
+            <FlatList
+              data={[
+                { id: 'all' as const, name: 'All classes' },
+                ...sortedClasses.map((c) => ({ id: c.id, name: c.name })),
+              ]}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const on = classId === item.id;
+                return (
+                  <Pressable
+                    style={[styles.modalRow, on && styles.modalRowOn]}
+                    onPress={() => {
+                      setClassId(item.id);
+                      setClassModalOpen(false);
+                    }}
+                  >
+                    <Text style={styles.modalRowText}>{item.name}</Text>
+                  </Pressable>
+                );
+              }}
+            />
+            <Pressable style={styles.modalClose} onPress={() => setClassModalOpen(false)}>
+              <Text style={styles.modalCloseTxt}>Cancel</Text>
             </Pressable>
-          </View>
-        </View>
-      </PulseScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  progressContainer: {
-    marginTop: 12,
-    marginBottom: 20,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: theme.primary,
-    borderRadius: 2,
-  },
-  progressText: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    textAlign: 'center',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  backIcon: {
-    fontSize: 24,
-    color: theme.primary,
-    fontFamily: 'DMSans-Regular',
-  },
-  content: {
-    flex: 1,
-  },
-  questionTitle: {
-    fontSize: 28,
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    marginBottom: 12,
-    lineHeight: 36,
-  },
-  questionSubtitle: {
-    fontSize: 16,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-  optionsContainer: {
-    gap: 12,
-  },
-  optionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    padding: 20,
-    marginBottom: 12,
-  },
-  optionCardSelected: {
-    backgroundColor: '#F0F0FF',
-    borderColor: theme.primary,
-  },
-  optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  optionTextContainer: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-    marginBottom: 6,
-  },
-  optionDescription: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    lineHeight: 20,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: ink.borderInk,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxSelected: {
-    borderColor: theme.primary,
-    backgroundColor: theme.primary,
-  },
-  checkboxInner: {
-    width: 14,
-    height: 14,
-    borderRadius: 3,
-    backgroundColor: '#FFFFFF',
-  },
-  buttonContainer: {
-    marginTop: 32,
-    marginBottom: 20,
-  },
-  nextButton: {
-    backgroundColor: theme.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextButtonDisabled: {
-    backgroundColor: '#E0E0E0',
-  },
-  nextButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-  },
-  nextButtonTextDisabled: {
-    color: '#1A1A22',
-  },
-});
-
 export default CreateForm;
-

@@ -2,7 +2,6 @@ import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Platform,
   TextInput,
   Pressable,
@@ -13,40 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { useClasses, type ClassStudentRecord } from '../context/ClassesContext';
+import { parseStudentCsvRows } from '../utils/parseStudentCsv';
 import { usePulseAlert } from '../context/AlertModalContext';
-import { theme, fonts as F, ink, radius } from '../theme';
 import { PulseScrollView } from '../components/PulseScrollView';
+import { useViewStudentsStyles } from './useViewStudentsStyles';
 import BackButton from '../components/Reusable-Components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ViewStudents'>;
-
-const CANVAS = ink.canvas;
-const INK = ink.ink;
-const INK_SOFT = ink.inkSoft;
-const BORDER = '#000000';
-const BW = 1;
-const R_CARD = radius.card;
-const R_INPUT = radius.input;
-
-const SearchIcon = ({ size = 20, color = INK_SOFT }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path d="M21 21L16.65 16.65" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
-const PlusIcon = ({ size = 22, color = '#FFFFFF' }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5V19M5 12H19" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
-  </Svg>
-);
 
 const TrashIcon = ({ size = 20, color = '#DC2626' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -61,37 +34,58 @@ const TrashIcon = ({ size = 20, color = '#DC2626' }: { size?: number; color?: st
   </Svg>
 );
 
-const UserIcon = ({ size = 20, color = theme.white }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
 function newStudentId(): string {
   return `st-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
+  const { styles, ink, theme } = useViewStudentsStyles();
+  const SearchIcon = ({ size = 20, color = ink.inkSoft }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path d="M21 21L16.65 16.65" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+  const PlusIcon = ({ size = 22, color = theme.white }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 5V19M5 12H19" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+    </Svg>
+  );
+  const UserIcon = ({ size = 20, color = theme.white }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+
   const { classId } = route.params;
   const { classes, updateClass } = useClasses();
   const { showAlert, showSuccess, showError } = usePulseAlert();
 
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
+  const [csvPaste, setCsvPaste] = useState('');
   const [addName, setAddName] = useState('');
   const [addEmail, setAddEmail] = useState('');
 
@@ -149,10 +143,42 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
     });
   };
 
-  const openAdd = () => {
+  const openAddMenu = () => {
+    setAddMenuOpen(true);
+  };
+
+  const openAddOne = () => {
+    setAddMenuOpen(false);
     setAddName('');
     setAddEmail('');
     setAddOpen(true);
+  };
+
+  const openCsvImport = () => {
+    setAddMenuOpen(false);
+    setCsvPaste('');
+    setCsvOpen(true);
+  };
+
+  const submitCsvImport = () => {
+    if (!classData) return;
+    const rows = parseStudentCsvRows(csvPaste);
+    if (rows.length === 0) {
+      showError('No rows found', 'Paste CSV lines with name and optional email, separated by commas.');
+      return;
+    }
+    const added: ClassStudentRecord[] = rows.map((r) => ({
+      id: newStudentId(),
+      name: r.name,
+      email: r.email,
+    }));
+    persistRoster([...roster, ...added]);
+    setCsvPaste('');
+    setCsvOpen(false);
+    showSuccess(
+      'Imported',
+      `Added ${added.length} student${added.length === 1 ? '' : 's'} from CSV.`,
+    );
   };
 
   const submitAdd = () => {
@@ -223,10 +249,10 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
         </Text>
         <Pressable
           style={({ pressed }) => [styles.headerAddBtn, pressed && styles.headerAddBtnPressed]}
-          onPress={openAdd}
-          accessibilityLabel="Add student"
+          onPress={openAddMenu}
+          accessibilityLabel="Add student or import from CSV"
         >
-          <PlusIcon size={22} color="#FFFFFF" />
+          <PlusIcon size={22} color={theme.white} />
         </Pressable>
       </View>
 
@@ -291,7 +317,7 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
             onPress={confirmDeleteSelected}
             disabled={selectedCount === 0}
           >
-            <TrashIcon size={18} color={selectedCount === 0 ? INK_SOFT : '#DC2626'} />
+            <TrashIcon size={18} color={selectedCount === 0 ? ink.inkSoft : '#DC2626'} />
             <Text
               style={[
                 styles.toolBtnTxtDanger,
@@ -304,7 +330,7 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         <View style={styles.searchRow}>
-          <SearchIcon size={20} color={INK_SOFT} />
+          <SearchIcon size={20} color={ink.inkSoft} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by name or email…"
@@ -316,8 +342,13 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
           />
         </View>
 
-        <Pressable style={styles.addWideBtn} onPress={openAdd} android_ripple={{ color: theme.rippleLight }}>
-          <PlusIcon size={20} color="#FFFFFF" />
+        <Pressable
+          style={styles.addWideBtn}
+          onPress={openAddMenu}
+          android_ripple={{ color: theme.rippleLight }}
+          accessibilityLabel="Add student or import from CSV"
+        >
+          <PlusIcon size={20} color={theme.white} />
           <Text style={styles.addWideBtnTxt}>Add student</Text>
         </Pressable>
 
@@ -325,8 +356,8 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Build your roster</Text>
             <Text style={styles.emptyBody}>
-              Add students one at a time with the button above. Names and emails are saved to this
-              class and used in grades and attendance.
+              Tap Add to enter one student or import a list from CSV. Names and emails are saved to
+              this class and used in grades and attendance.
             </Text>
           </View>
         ) : filteredRoster.length === 0 ? (
@@ -350,7 +381,7 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
                       <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
                         <Path
                           d="M20 6L9 17L4 12"
-                          stroke="#FFFFFF"
+                          stroke={theme.white}
                           strokeWidth="3"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -379,6 +410,48 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
       </PulseScrollView>
+
+      <Modal
+        visible={addMenuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAddMenuOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalDimmer} onPress={() => setAddMenuOpen(false)} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCenter}
+            pointerEvents="box-none"
+          >
+            <View style={styles.menuCard}>
+              <Text style={styles.menuTitle}>Add to roster</Text>
+              <Text style={styles.menuHint}>Choose how you want to add students.</Text>
+              <Pressable
+                style={({ pressed }) => [styles.menuOption, pressed && styles.menuOptionPressed]}
+                onPress={openAddOne}
+                android_ripple={{ color: theme.rippleLight }}
+              >
+                <Text style={styles.menuOptionTitle}>Add one student</Text>
+                <Text style={styles.menuOptionSub}>Enter name and optional email</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.menuOption, pressed && styles.menuOptionPressed]}
+                onPress={openCsvImport}
+                android_ripple={{ color: theme.rippleLight }}
+              >
+                <Text style={styles.menuOptionTitle}>Import from CSV</Text>
+                <Text style={styles.menuOptionSub}>
+                  Add students in bulk — paste a list (name and optional email per line)
+                </Text>
+              </Pressable>
+              <Pressable style={styles.menuDismiss} onPress={() => setAddMenuOpen(false)}>
+                <Text style={styles.menuDismissTxt}>Cancel</Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
 
       <Modal visible={addOpen} transparent animationType="fade" onRequestClose={() => setAddOpen(false)}>
         <View style={styles.modalRoot}>
@@ -421,328 +494,53 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
           </KeyboardAvoidingView>
         </View>
       </Modal>
+
+      <Modal visible={csvOpen} transparent animationType="fade" onRequestClose={() => setCsvOpen(false)}>
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalDimmer} onPress={() => setCsvOpen(false)} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCenter}
+            pointerEvents="box-none"
+          >
+            <View style={styles.csvCard}>
+              <Text style={styles.modalTitle}>Import from CSV</Text>
+              <Text style={styles.csvDetailHeading}>Adding students in bulk</Text>
+              <Text style={styles.csvDetailBody}>
+                Use this when you have a class list from a spreadsheet, a school export, or another
+                roster. Paste the list below—each line becomes one student on this class. Existing
+                students are not removed; new rows are added to the roster.
+              </Text>
+              <Text style={styles.csvHelpLabel}>Format</Text>
+              <Text style={styles.csvHelp}>
+                One student per line: <Text style={styles.csvMono}>Name, email</Text>. Email is optional.
+                You can include an optional header row with “name” and “email”. Paste from a .csv file or
+                copy columns from Excel or Google Sheets.
+              </Text>
+              <TextInput
+                style={styles.csvTextarea}
+                placeholder={'Alex Morgan, alex@school.edu\nJordan Lee'}
+                placeholderTextColor={ink.placeholder}
+                value={csvPaste}
+                onChangeText={setCsvPaste}
+                multiline
+                textAlignVertical="top"
+                scrollEnabled
+              />
+              <View style={styles.csvActions}>
+                <Pressable style={styles.modalCancel} onPress={() => setCsvOpen(false)}>
+                  <Text style={styles.modalCancelTxt}>Cancel</Text>
+                </Pressable>
+                <Pressable style={styles.csvConfirm} onPress={submitCsvImport}>
+                  <Text style={styles.modalSaveTxt}>Add to roster</Text>
+                </Pressable>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: CANVAS,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingLeft: 8,
-    paddingTop: 14,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ink.rowDivider,
-    backgroundColor: CANVAS,
-  },
-  headerTitle: {
-    flex: 1,
-    marginLeft: 2,
-    fontSize: 22,
-    fontFamily: F.outfitBold,
-    color: INK,
-    letterSpacing: -0.4,
-  },
-  headerSpacer: {
-    width: 44,
-  },
-  headerAddBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: BW,
-    borderColor: BORDER,
-  },
-  headerAddBtnPressed: {
-    opacity: 0.9,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  heroCard: {
-    borderWidth: BW,
-    borderColor: BORDER,
-    borderRadius: R_CARD,
-    padding: 16,
-    marginBottom: 14,
-    backgroundColor: CANVAS,
-  },
-  className: {
-    fontSize: 20,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 6,
-    letterSpacing: -0.3,
-  },
-  heroMeta: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  toolbar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
-  },
-  toolBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: BW,
-  },
-  toolBtnOutline: {
-    borderColor: BORDER,
-    backgroundColor: CANVAS,
-  },
-  toolBtnDanger: {
-    borderColor: 'rgba(220, 38, 38, 0.45)',
-    backgroundColor: 'rgba(220, 38, 38, 0.06)',
-  },
-  toolBtnDisabled: {
-    opacity: 0.45,
-  },
-  toolBtnPressed: {
-    opacity: 0.88,
-  },
-  toolBtnTxt: {
-    fontSize: 13,
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  toolBtnTxtDanger: {
-    fontSize: 13,
-    fontFamily: F.dmSemi,
-    color: '#DC2626',
-  },
-  toolBtnTxtDisabled: {
-    color: INK_SOFT,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: BW,
-    borderColor: BORDER,
-    borderRadius: R_INPUT,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    backgroundColor: CANVAS,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    paddingHorizontal: 8,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK,
-  },
-  addWideBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: R_CARD,
-    backgroundColor: theme.primary,
-    borderWidth: BW,
-    borderColor: BORDER,
-    marginBottom: 16,
-  },
-  addWideBtnTxt: {
-    fontSize: 16,
-    fontFamily: F.dmSemi,
-    color: '#FFFFFF',
-  },
-  emptyCard: {
-    padding: 18,
-    borderRadius: R_CARD,
-    borderWidth: BW,
-    borderColor: BORDER,
-    backgroundColor: CANVAS,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 8,
-  },
-  emptyBody: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  emptyWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  listCard: {
-    borderRadius: R_CARD,
-    borderWidth: BW,
-    borderColor: BORDER,
-    overflow: 'hidden',
-    backgroundColor: CANVAS,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: CANVAS,
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ink.rowDivider,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: BW,
-    borderColor: BORDER,
-    marginRight: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: CANVAS,
-  },
-  checkboxOn: {
-    backgroundColor: theme.primary,
-    borderColor: theme.primary,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: BW,
-    borderColor: BORDER,
-  },
-  rowText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  name: {
-    fontSize: 16,
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  email: {
-    fontSize: 13,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginTop: 4,
-  },
-  emailMuted: {
-    fontSize: 12,
-    fontFamily: F.dmRegular,
-    color: '#94A3B8',
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  modalRoot: {
-    flex: 1,
-  },
-  modalDimmer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  modalCenter: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    backgroundColor: CANVAS,
-    borderRadius: R_CARD,
-    borderWidth: BW,
-    borderColor: BORDER,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontFamily: F.outfitBold,
-    color: INK,
-    marginBottom: 6,
-  },
-  modalHint: {
-    fontSize: 14,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  modalInput: {
-    borderWidth: BW,
-    borderColor: BORDER,
-    borderRadius: R_INPUT,
-    paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    fontSize: 16,
-    fontFamily: F.dmRegular,
-    color: INK,
-    marginBottom: 14,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 4,
-  },
-  modalCancel: {
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    borderWidth: BW,
-    borderColor: BORDER,
-  },
-  modalCancelTxt: {
-    fontSize: 16,
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  modalSave: {
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    borderRadius: 10,
-    backgroundColor: theme.primary,
-    borderWidth: BW,
-    borderColor: BORDER,
-  },
-  modalSaveTxt: {
-    fontSize: 16,
-    fontFamily: F.dmSemi,
-    color: '#FFFFFF',
-  },
-});
 
 export default ViewStudents;

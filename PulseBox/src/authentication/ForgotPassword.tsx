@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,120 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { theme, fonts as F, ink, radius } from '../theme';
+import { fonts as F, radius, useThemeMode } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
 import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
 const ForgotPassword: React.FC<Props> = ({ navigation, route }) => {
+  const { ink, theme } = useThemeMode();
   const initialEmail = route.params?.email ?? '';
   const [email, setEmail] = useState(initialEmail);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        flex: { flex: 1 },
+        screen: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        backBtn: {
+          alignSelf: 'flex-start',
+          marginBottom: 2,
+        },
+        scrollContent: {
+          paddingHorizontal: 28,
+          paddingTop: 0,
+          paddingBottom: 24,
+          maxWidth: 480,
+          width: '100%',
+          alignSelf: 'center',
+        },
+        brandRow: {
+          alignItems: 'center',
+          marginBottom: 6,
+        },
+        logo: {
+          width: 118,
+          height: 100,
+          maxWidth: '100%',
+        },
+        inner: {
+          width: '100%',
+        },
+        sub: {
+          fontSize: 15,
+          fontFamily: F.dmMedium,
+          color: ink.inkSoft,
+          marginBottom: 4,
+        },
+        heading: {
+          fontSize: 34,
+          lineHeight: 40,
+          fontFamily: F.outfitBlack,
+          color: ink.ink,
+          marginBottom: 10,
+          letterSpacing: -0.8,
+        },
+        lede: {
+          fontSize: 15,
+          lineHeight: 22,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+          marginBottom: 18,
+          maxWidth: 360,
+        },
+        input: {
+          width: '100%',
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          borderRadius: radius.input,
+          paddingHorizontal: 16,
+          paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+          fontSize: 15,
+          fontFamily: F.dmRegular,
+          color: ink.ink,
+          marginTop: 10,
+          backgroundColor: ink.canvas,
+        },
+        inputFirst: {
+          marginTop: 0,
+        },
+        primaryBtn: {
+          marginTop: 20,
+          backgroundColor: theme.primary,
+          paddingVertical: 14,
+          borderRadius: radius.btn,
+          alignItems: 'center',
+        },
+        primaryBtnDisabled: {
+          opacity: 0.45,
+        },
+        primaryLabel: {
+          color: theme.white,
+          fontSize: 17,
+          fontFamily: F.outfitBold,
+        },
+        loginRow: {
+          marginTop: 22,
+          paddingBottom: 8,
+          alignItems: 'center',
+        },
+        alt: {
+          fontSize: 14,
+          textAlign: 'center',
+          color: ink.inkSoft,
+          fontFamily: F.dmRegular,
+        },
+        altLink: {
+          color: theme.primary,
+          fontFamily: F.outfitBold,
+        },
+      }),
+    [ink, theme],
+  );
 
   const handleBack = () => {
     if (navigation.canGoBack()) navigation.goBack();
@@ -102,105 +207,5 @@ const ForgotPassword: React.FC<Props> = ({ navigation, route }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  screen: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    marginBottom: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 0,
-    paddingBottom: 24,
-    maxWidth: 480,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  brandRow: {
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  logo: {
-    width: 118,
-    height: 100,
-    maxWidth: '100%',
-  },
-  inner: {
-    width: '100%',
-  },
-  sub: {
-    fontSize: 15,
-    fontFamily: F.dmMedium,
-    color: ink.inkSoft,
-    marginBottom: 4,
-  },
-  heading: {
-    fontSize: 34,
-    lineHeight: 40,
-    fontFamily: F.outfitBlack,
-    color: ink.ink,
-    marginBottom: 10,
-    letterSpacing: -0.8,
-  },
-  lede: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: F.dmRegular,
-    color: ink.inkSoft,
-    marginBottom: 18,
-    maxWidth: 360,
-  },
-  input: {
-    width: '100%',
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-    borderRadius: radius.input,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: ink.ink,
-    marginTop: 10,
-    backgroundColor: ink.canvas,
-  },
-  inputFirst: {
-    marginTop: 0,
-  },
-  primaryBtn: {
-    marginTop: 20,
-    backgroundColor: theme.primary,
-    paddingVertical: 14,
-    borderRadius: radius.btn,
-    alignItems: 'center',
-  },
-  primaryBtnDisabled: {
-    opacity: 0.45,
-  },
-  primaryLabel: {
-    color: theme.white,
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-  },
-  loginRow: {
-    marginTop: 22,
-    paddingBottom: 8,
-    alignItems: 'center',
-  },
-  alt: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: ink.inkSoft,
-    fontFamily: F.dmRegular,
-  },
-  altLink: {
-    color: theme.primary,
-    fontFamily: F.outfitBold,
-  },
-});
 
 export default ForgotPassword;

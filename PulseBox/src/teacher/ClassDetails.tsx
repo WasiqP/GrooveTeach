@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
+import { View, Text, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { ink } from '../theme/typography';
-import BackIcon from '../../assets/images/Back.svg';
+import BackButton from '../components/Reusable-Components/BackButton';
+import { useClassDetailsStyles } from './useClassDetailsStyles';
 import { PulseScrollView } from '../components/PulseScrollView';
 import Svg, { Path } from 'react-native-svg';
 import {
@@ -15,6 +15,7 @@ import {
 } from '../context/ClassesContext';
 import { useGradesTasks, type TaskKind } from '../context/GradesTasksContext';
 import { usePulseAlert } from '../context/AlertModalContext';
+import ClassDetailsAttendanceReport from '../components/ClassDetailsAttendanceReport';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ClassDetails'>;
 
@@ -38,14 +39,6 @@ function formatRelativeTime(iso: string): string {
   if (day < 7) return `${day}d ago`;
   return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
-
-// Icons
-const StudentsIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
-);
 
 const CheckIcon = ({ size = 24, color = '#4CAF50' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -105,6 +98,14 @@ const ActivityKindIcon = ({ kind }: { kind: ClassActivityKind }) => {
 };
 
 const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
+  const { styles, ink, theme } = useClassDetailsStyles();
+  const StudentsIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <Path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  );
+
   const { classId } = route.params;
   const { classes, deleteClass, updateClass } = useClasses();
   const { getTasksForClass } = useGradesTasks();
@@ -130,7 +131,7 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
     },
     {
       id: 'quizzes',
-      title: 'Quizzes & assignments',
+      title: 'Tasks',
       icon: DocumentIcon,
       color: '#A060FF',
       onPress: () => navigation.navigate('Home', { tab: 'Quizzes' }),
@@ -231,13 +232,12 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable
+          <BackButton
             style={styles.backBtn}
             onPress={() => navigation.goBack()}
-            android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
-          >
-            <BackIcon width={24} height={24} stroke="#000000" />
-          </Pressable>
+            stroke={ink.ink}
+            rippleColor={theme.rippleLight}
+          />
           <Text style={styles.headerTitle}>Class Details</Text>
           <View style={styles.placeholder} />
         </View>
@@ -256,13 +256,12 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable
+        <BackButton
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
-          android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
-        >
-          <BackIcon width={24} height={24} stroke="#000000" />
-        </Pressable>
+          stroke={ink.ink}
+          rippleColor={theme.rippleLight}
+        />
         <Text style={styles.headerTitle}>Class Details</Text>
         <View style={styles.placeholder} />
       </View>
@@ -316,6 +315,8 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
           </View>
         </View>
 
+        <ClassDetailsAttendanceReport classData={classData} />
+
         {/* Announcements */}
         <View style={styles.sectionOuter}>
           <View style={styles.borderedSection}>
@@ -327,7 +328,7 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
               <TextInput
                 style={styles.announcementInput}
                 placeholder="Write an announcement…"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={ink.placeholder}
                 value={announcementDraft}
                 onChangeText={setAnnouncementDraft}
                 multiline
@@ -425,365 +426,6 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-  },
-  placeholder: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 60,
-  },
-  infoCard: {
-    backgroundColor: '#F8F5FF',
-    borderWidth: 1,
-    borderColor: '#E0D5FF',
-    borderRadius: 16,
-    padding: 20,
-    marginHorizontal: 24,
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  className: {
-    fontSize: 24,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  schoolLine: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#64748B',
-    marginBottom: 10,
-  },
-  classSubject: {
-    fontSize: 16,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  infoText: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    marginRight: 8,
-  },
-  roomText: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-  },
-  quickActionsSection: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    marginBottom: 16,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  quickActionCard: {
-    width: '47%',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  quickActionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  quickActionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-    textAlign: 'center',
-  },
-  sectionOuter: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  borderedSection: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    padding: 16,
-  },
-  sectionTitleInCard: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  announcementLead: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: 'DMSans-Regular',
-    color: '#64748B',
-    marginBottom: 14,
-  },
-  announcementComposer: {
-    marginBottom: 16,
-  },
-  announcementInput: {
-    minHeight: 100,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    fontSize: 15,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    backgroundColor: '#FAFAFA',
-    marginBottom: 12,
-  },
-  postAnnouncementBtn: {
-    backgroundColor: '#A060FF',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  postAnnouncementBtnPressed: {
-    opacity: 0.9,
-  },
-  postAnnouncementBtnText: {
-    fontSize: 16,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#FFFFFF',
-  },
-  announcementList: {
-    marginTop: 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E5E5E5',
-  },
-  announcementRow: {
-    paddingTop: 14,
-    paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5E5',
-  },
-  announcementRowLast: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
-  },
-  announcementRowHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  announcementDate: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: '#64748B',
-  },
-  announcementBody: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-  },
-  announcementEmpty: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#94A3B8',
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
-  activitySectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  notifPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#000000',
-    backgroundColor: 'rgba(160, 96, 255, 0.08)',
-  },
-  notifPillText: {
-    fontSize: 11,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-    letterSpacing: 0.2,
-  },
-  activityIntro: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontFamily: 'DMSans-Regular',
-    color: '#64748B',
-    marginBottom: 12,
-  },
-  activityEmptyBox: {
-    paddingVertical: 12,
-  },
-  activityEmptyTitle: {
-    fontSize: 15,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#1A1A22',
-    marginBottom: 4,
-  },
-  activityEmptySub: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: 'DMSans-Regular',
-    color: '#64748B',
-  },
-  activityList: {
-    gap: 0,
-  },
-  activityRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5E5',
-  },
-  activityUnreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#A060FF',
-    marginTop: 14,
-    marginRight: 8,
-  },
-  activityIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(160, 96, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  activityCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  activityHeadline: {
-    fontSize: 15,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  activityDetail: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: 'DMSans-Regular',
-    color: '#475569',
-    marginBottom: 6,
-  },
-  activityTime: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: '#94A3B8',
-  },
-  deleteBtn: {
-    marginHorizontal: 24,
-    marginTop: 8,
-    marginBottom: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(220, 38, 38, 0.45)',
-    backgroundColor: 'rgba(220, 38, 38, 0.06)',
-    alignItems: 'center',
-  },
-  deleteBtnText: {
-    fontSize: 16,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#DC2626',
-  },
-  notFoundWrap: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notFoundTitle: {
-    fontSize: 20,
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  notFoundSub: {
-    fontSize: 15,
-    fontFamily: 'DMSans-Regular',
-    color: '#64748B',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  notFoundBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#A060FF',
-  },
-  notFoundBtnTxt: {
-    fontSize: 16,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#FFFFFF',
-  },
-});
 
 export default ClassDetails;
 

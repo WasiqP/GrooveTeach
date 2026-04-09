@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  TextInput,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
@@ -8,17 +15,8 @@ import { PulseScrollView } from '../components/PulseScrollView';
 import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
 import { useForms } from '../context/FormsContext';
 import FormIcon from '../components/FormIcons';
-import { theme, fonts as F, ink, radius } from '../theme';
 import Svg, { Path } from 'react-native-svg';
-
-const CANVAS = ink.canvas;
-const INK = ink.ink;
-const INK_SOFT = ink.inkSoft;
-const BORDER_INK = ink.borderInk;
-const BORDER_WIDTH = ink.borderWidth;
-const ROW_DIVIDER = ink.rowDivider;
-const R_CARD = radius.card;
-const R_INPUT = radius.input;
+import { useQuizzesStyles } from './useQuizzesStyles';
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
 
@@ -27,10 +25,12 @@ type Props = {
   embedded?: boolean;
 };
 
+type AssessmentKind = 'quiz' | 'assignment' | 'test';
+
 interface Quiz {
   id: string;
   title: string;
-  type: 'quiz' | 'assignment' | 'test';
+  type: AssessmentKind;
   classId: string;
   className: string;
   dueDate: string;
@@ -39,264 +39,400 @@ interface Quiz {
   createdAt: string;
 }
 
-// Icons
-const QuizIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 11L12 14L22 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
-);
-
 const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
-  const { forms } = useForms(); // Use existing forms context - forms are now quizzes
+  const { styles, ink, theme } = useQuizzesStyles();
+  const KIND_META = useMemo<
+    Record<AssessmentKind, { label: string; accent: string; soft: string }>
+  >(
+    () => ({
+      quiz: { label: 'Quiz', accent: theme.primary, soft: theme.primarySoft },
+      assignment: { label: 'Assignment', accent: '#0D9488', soft: 'rgba(13, 148, 136, 0.12)' },
+      test: { label: 'Test', accent: '#D97706', soft: 'rgba(217, 119, 6, 0.12)' },
+    }),
+    [theme],
+  );
+  const SearchIcon = ({ size = 20, color = ink.inkSoft }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path d="M21 21L16.65 16.65" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+  const ChevronRightIcon = ({ size = 20, color = ink.inkSoft }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="m9 18 6-6-6-6"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+  const ClipboardIcon = ({ size = 22, color = theme.primary }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+  const QuizIcon = ({ size = 24, color = ink.inkSoft }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 11L12 14L22 4"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+
+  const { forms } = useForms();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'quiz' | 'assignment' | 'test'>('all');
-  
-  // Convert forms to quizzes format (forms are now quizzes/assessments/tests)
-  const quizzes: Quiz[] = forms.map(form => ({
-    id: form.id,
-    title: form.name,
-    type: 'quiz' as const, // Default to quiz, can be enhanced later
-    classId: '1', // Will be linked to classes later
-    className: 'All Classes', // Will be linked to classes later
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
-    submissions: 0, // Will be tracked later
-    totalStudents: 28, // Will be linked to classes later
-    createdAt: form.createdAt,
-  }));
-  
-  // Mock additional quizzes for demo (can be removed when forms are fully integrated)
-  const mockQuizzes: Quiz[] = forms.length === 0 ? [
-    {
-      id: '1',
-      title: 'Algebra Quiz - Chapter 5',
-      type: 'quiz',
-      classId: '1',
-      className: 'Mathematics 101',
-      dueDate: '2024-02-15',
-      submissions: 24,
-      totalStudents: 28,
-      createdAt: '2024-02-01',
-    },
-    {
-      id: '2',
-      title: 'Essay: Shakespeare Analysis',
-      type: 'assignment',
-      classId: '2',
-      className: 'English Literature',
-      dueDate: '2024-02-20',
-      submissions: 18,
-      totalStudents: 24,
-      createdAt: '2024-02-05',
-    },
-    {
-      id: '3',
-      title: 'Midterm Exam - Biology',
-      type: 'test',
-      classId: '3',
-      className: 'Biology 201',
-      dueDate: '2024-02-25',
-      submissions: 0,
-      totalStudents: 30,
-      createdAt: '2024-02-10',
-    },
-  ] : [];
-  
-  // Combine forms (as quizzes) with mock data
-  const allQuizzes = [...quizzes, ...mockQuizzes];
+  const [filter, setFilter] = useState<'all' | AssessmentKind>('all');
 
-  const filteredQuizzes = allQuizzes.filter(quiz => {
-    const matchesSearch = quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         quiz.className.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === 'all' || quiz.type === filter;
-    return matchesSearch && matchesFilter;
-  });
+  const quizzes: Quiz[] = useMemo(
+    () =>
+      forms.map((form) => ({
+        id: form.id,
+        title: form.name,
+        type: 'quiz' as const,
+        classId: '1',
+        className: 'All classes',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        submissions: 0,
+        totalStudents: 28,
+        createdAt: form.createdAt,
+      })),
+    [forms],
+  );
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'quiz': return '#4CAF50';
-      case 'assignment': return '#2196F3';
-      case 'test': return '#F44336';
-      default: return '#1A1A22';
-    }
-  };
+  const mockQuizzes: Quiz[] = useMemo(
+    () =>
+      forms.length === 0
+        ? [
+            {
+              id: 'demo-1',
+              title: 'Algebra Quiz — Chapter 5',
+              type: 'quiz',
+              classId: '1',
+              className: 'Mathematics 101',
+              dueDate: '2026-03-15',
+              submissions: 24,
+              totalStudents: 28,
+              createdAt: new Date().toISOString(),
+            },
+            {
+              id: 'demo-2',
+              title: 'Essay: Shakespeare analysis',
+              type: 'assignment',
+              classId: '2',
+              className: 'English Literature',
+              dueDate: '2026-03-22',
+              submissions: 18,
+              totalStudents: 24,
+              createdAt: new Date().toISOString(),
+            },
+            {
+              id: 'demo-3',
+              title: 'Midterm exam — Biology',
+              type: 'test',
+              classId: '3',
+              className: 'Biology 201',
+              dueDate: '2026-04-02',
+              submissions: 0,
+              totalStudents: 30,
+              createdAt: new Date().toISOString(),
+            },
+          ]
+        : [],
+    [forms.length],
+  );
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'quiz': return 'Quiz';
-      case 'assignment': return 'Assignment';
-      case 'test': return 'Test';
-      default: return type;
-    }
-  };
+  const allQuizzes = useMemo(() => [...quizzes, ...mockQuizzes], [quizzes, mockQuizzes]);
+
+  const filteredQuizzes = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return allQuizzes.filter((quiz) => {
+      const matchesSearch =
+        !q ||
+        quiz.title.toLowerCase().includes(q) ||
+        quiz.className.toLowerCase().includes(q);
+      const matchesFilter = filter === 'all' || quiz.type === filter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [allQuizzes, searchQuery, filter]);
+
+  const counts = useMemo(() => {
+    let quiz = 0;
+    let assignment = 0;
+    let test = 0;
+    allQuizzes.forEach((x) => {
+      if (x.type === 'quiz') quiz++;
+      else if (x.type === 'assignment') assignment++;
+      else test++;
+    });
+    return { total: allQuizzes.length, quiz, assignment, test };
+  }, [allQuizzes]);
+
+  const filterChips: { key: typeof filter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'quiz', label: 'Quizzes' },
+    { key: 'assignment', label: 'Assignments' },
+    { key: 'test', label: 'Tests' },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <TabScreenHeaderBar navigation={navigation}>
+      <TabScreenHeaderBar navigation={navigation} paddingHorizontal={20}>
         <View>
-          <Text style={styles.title}>Quizzes & Assignments</Text>
-          <Text style={styles.subtitle}>Create and manage quizzes, assignments, and tests</Text>
+          <Text style={styles.title}>My Tasks</Text>
+          <Text style={styles.subtitle}>
+            Create and manage quizzes, assignments, and tests — open a task to edit or share.
+          </Text>
         </View>
       </TabScreenHeaderBar>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search quizzes..."
-          placeholderTextColor={ink.placeholder}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      {/* Filter Tabs */}
-      <View style={styles.filterTabs}>
-        <Pressable
-          style={[styles.filterTab, filter === 'all' && styles.filterTabActive]}
-          onPress={() => setFilter('all')}
-          android_ripple={{ color: 'rgba(160,96,255,0.12)' }}
-        >
-          <Text style={[styles.filterTabText, filter === 'all' && styles.filterTabTextActive]}>
-            All
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.filterTab, filter === 'quiz' && styles.filterTabActive]}
-          onPress={() => setFilter('quiz')}
-          android_ripple={{ color: 'rgba(160,96,255,0.12)' }}
-        >
-          <Text style={[styles.filterTabText, filter === 'quiz' && styles.filterTabTextActive]}>
-            Quizzes
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.filterTab, filter === 'assignment' && styles.filterTabActive]}
-          onPress={() => setFilter('assignment')}
-          android_ripple={{ color: 'rgba(160,96,255,0.12)' }}
-        >
-          <Text style={[styles.filterTabText, filter === 'assignment' && styles.filterTabTextActive]}>
-            Assignments
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.filterTab, filter === 'test' && styles.filterTabActive]}
-          onPress={() => setFilter('test')}
-          android_ripple={{ color: 'rgba(160,96,255,0.12)' }}
-        >
-          <Text style={[styles.filterTabText, filter === 'test' && styles.filterTabTextActive]}>
-            Tests
-          </Text>
-        </Pressable>
-      </View>
-
-      {/* Create New Button */}
-      <Pressable
-        style={styles.createBtn}
-        android_ripple={{ color: 'rgba(160,96,255,0.1)' }}
-        onPress={() => navigation.navigate('CreateForm')}
-      >
-        <View style={styles.createContent}>
-          <View style={styles.plusIcon}>
-            <Text style={styles.plusText}>+</Text>
-          </View>
-          <View style={styles.createText}>
-            <Text style={styles.createTitle}>Create New Quiz/Assignment</Text>
-            <Text style={styles.createDesc}>Create a quiz, assignment, or test</Text>
-          </View>
-        </View>
-      </Pressable>
-
-      {/* Quizzes List */}
       <PulseScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.topBand}>
+          <View style={styles.statsCard}>
+            <View style={styles.statCell}>
+              <Text style={styles.statNum}>{counts.total}</Text>
+              <Text style={styles.statLab}>Total</Text>
+            </View>
+            <View style={styles.statRule} />
+            <View style={styles.statCell}>
+              <Text style={styles.statNum}>{counts.quiz}</Text>
+              <Text style={styles.statLab}>Quizzes</Text>
+            </View>
+            <View style={styles.statRule} />
+            <View style={styles.statCell}>
+              <Text style={styles.statNum}>{counts.assignment}</Text>
+              <Text style={styles.statLab}>Tasks</Text>
+            </View>
+            <View style={styles.statRule} />
+            <View style={styles.statCell}>
+              <Text style={styles.statNum}>{counts.test}</Text>
+              <Text style={styles.statLab}>Tests</Text>
+            </View>
+          </View>
+
+          <View style={styles.searchRow}>
+            <SearchIcon size={20} color={ink.inkSoft} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by title or class…"
+              placeholderTextColor={ink.placeholder}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsScroll}
+          >
+            {filterChips.map((c) => {
+              const on = filter === c.key;
+              return (
+                <Pressable
+                  key={c.key}
+                  style={[styles.chip, on && styles.chipOn]}
+                  onPress={() => setFilter(c.key)}
+                  android_ripple={{ color: 'rgba(160,96,255,0.12)' }}
+                >
+                  <Text style={[styles.chipTxt, on && styles.chipTxtOn]}>{c.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Pressable
+            style={({ pressed }) => [styles.createCard, pressed && styles.createCardPressed]}
+            onPress={() => navigation.navigate('CreateForm')}
+            android_ripple={{ color: 'rgba(160,96,255,0.14)' }}
+          >
+            <View style={styles.createIconWrap}>
+              <ClipboardIcon size={26} color={theme.white} />
+            </View>
+            <View style={styles.createCopy}>
+              <Text style={styles.createTitle}>New task</Text>
+              <Text style={styles.createSub}>
+                One screen to set up a task, then add and edit questions.
+              </Text>
+            </View>
+            <ChevronRightIcon size={22} color="rgba(255,255,255,0.85)" />
+          </Pressable>
+        </View>
+
+        <Text style={styles.sectionLabel}>
+          {filter === 'all' ? 'Your tasks' : `${filterChips.find((x) => x.key === filter)?.label}`}
+          {searchQuery.trim() ? ` · ${filteredQuizzes.length} match` : ''}
+        </Text>
+
         {filteredQuizzes.length === 0 ? (
-          <View style={styles.emptyState}>
-            <QuizIcon size={64} color={ink.iconMuted} />
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIconWell}>
+              <QuizIcon size={40} color={theme.primary} />
+            </View>
             <Text style={styles.emptyTitle}>
-              {searchQuery ? 'No quizzes found' : 'No quizzes yet'}
+              {searchQuery.trim() ? 'No matches' : 'Nothing here yet'}
             </Text>
-            <Text style={styles.emptySubtitle}>
-              {searchQuery
-                ? 'Try adjusting your search'
-                : 'Create your first quiz or assignment to get started'}
+            <Text style={styles.emptyBody}>
+              {searchQuery.trim()
+                ? 'Try another search or clear filters.'
+                : 'Create a task to see it listed here. Sample items appear when you have no saved forms.'}
             </Text>
+            {!searchQuery.trim() ? (
+              <Pressable
+                style={styles.emptyCta}
+                onPress={() => navigation.navigate('CreateForm')}
+                android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+              >
+                <Text style={styles.emptyCtaTxt}>Create task</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
-          filteredQuizzes.map((quiz) => {
-            const form = forms.find(f => f.id === quiz.id);
-            return (
-            <Pressable
-              key={quiz.id}
-              style={styles.quizCard}
-              android_ripple={{ color: 'rgba(160,96,255,0.08)' }}
-              onPress={() => navigation.navigate('EditForm', { formId: quiz.id })}
-            >
-              <View style={styles.quizIcon}>
-                {form ? (
-                  <FormIcon iconId={form.iconId} size={24} color={getTypeColor(quiz.type)} />
-                ) : (
-                  <QuizIcon size={24} color={getTypeColor(quiz.type)} />
-                )}
-              </View>
-              <View style={styles.quizContent}>
-                <View style={styles.quizHeader}>
-                  <Text style={styles.quizTitle}>{quiz.title}</Text>
-                  <View style={[styles.typeBadge, { backgroundColor: getTypeColor(quiz.type) + '20' }]}>
-                    <Text style={[styles.typeBadgeText, { color: getTypeColor(quiz.type) }]}>
-                      {getTypeLabel(quiz.type)}
-                    </Text>
+          <View style={styles.listBlock}>
+            {filteredQuizzes.map((quiz, index) => {
+              const form = forms.find((f) => f.id === quiz.id);
+              const meta = KIND_META[quiz.type];
+              const pct =
+                quiz.totalStudents > 0
+                  ? Math.round((quiz.submissions / quiz.totalStudents) * 100)
+                  : 0;
+              const openDetail = () => {
+                if (form) {
+                  navigation.navigate('EditForm', { formId: quiz.id });
+                } else {
+                  navigation.navigate('CreateForm');
+                }
+              };
+              return (
+                <Pressable
+                  key={quiz.id}
+                  style={({ pressed }) => [
+                    styles.itemCard,
+                    index < filteredQuizzes.length - 1 && styles.itemCardMargin,
+                    pressed && styles.itemCardPressed,
+                  ]}
+                  onPress={openDetail}
+                  android_ripple={{ color: ink.pressTint }}
+                >
+                  <View style={[styles.itemIconWell, { backgroundColor: meta.soft }]}>
+                    {form ? (
+                      <FormIcon iconId={form.iconId} size={26} color={meta.accent} />
+                    ) : (
+                      <QuizIcon size={26} color={meta.accent} />
+                    )}
                   </View>
-                </View>
-                <Text style={styles.quizClass}>{quiz.className}</Text>
-                <View style={styles.quizInfo}>
-                  <Text style={styles.quizInfoText}>
-                    Due: {new Date(quiz.dueDate).toLocaleDateString()}
-                  </Text>
-                  <Text style={styles.quizInfoText}>
-                    • {quiz.submissions}/{quiz.totalStudents} submitted
-                  </Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${(quiz.submissions / quiz.totalStudents) * 100}%`,
-                        backgroundColor: getTypeColor(quiz.type),
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-              <View style={styles.quizActions}>
-                <Pressable
-                  style={styles.actionBtn}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    navigation.navigate('EditForm', { formId: quiz.id });
-                  }}
-                  android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
-                >
-                  <EditIcon width={18} height={18} stroke="#000000" />
+                  <View style={styles.itemMain}>
+                    <View style={styles.itemTitleRow}>
+                      <Text style={styles.itemTitle} numberOfLines={2}>
+                        {quiz.title}
+                      </Text>
+                      <View style={[styles.kindPill, { backgroundColor: meta.soft }]}>
+                        <Text style={[styles.kindPillTxt, { color: meta.accent }]}>{meta.label}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.itemClass} numberOfLines={1}>
+                      {quiz.className}
+                    </Text>
+                    <View style={styles.itemMetaRow}>
+                      <Text style={styles.itemMeta}>
+                        Due {new Date(quiz.dueDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                      </Text>
+                      <Text style={styles.itemMetaDot}>·</Text>
+                      <Text style={styles.itemMeta}>
+                        {quiz.submissions}/{quiz.totalStudents} turned in
+                      </Text>
+                    </View>
+                    <View style={styles.progressTrack}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          { width: `${pct}%`, backgroundColor: meta.accent },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.progressLab}>{pct}% submission rate</Text>
+                  </View>
+                  <View style={styles.itemSide}>
+                    <View style={styles.sideActions}>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.iconBtn,
+                          !form && styles.iconBtnDisabled,
+                          pressed && form && styles.iconBtnPressed,
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          if (form) navigation.navigate('EditForm', { formId: quiz.id });
+                          else navigation.navigate('CreateForm');
+                        }}
+                        hitSlop={8}
+                        accessibilityLabel="Edit"
+                      >
+                        <EditIcon width={18} height={18} stroke={form ? ink.ink : ink.inkSoft} />
+                      </Pressable>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.iconBtn,
+                          !form && styles.iconBtnDisabled,
+                          pressed && form && styles.iconBtnPressed,
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          if (form) navigation.navigate('ShareForm', { formId: quiz.id });
+                        }}
+                        disabled={!form}
+                        hitSlop={8}
+                        accessibilityLabel="Share"
+                      >
+                        <ShareIcon width={18} height={18} stroke={form ? ink.ink : ink.inkSoft} />
+                      </Pressable>
+                    </View>
+                    <ChevronRightIcon size={20} color={ink.inkSoft} />
+                  </View>
                 </Pressable>
-                <Pressable
-                  style={[styles.actionBtn, { marginLeft: 8 }]}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    navigation.navigate('ShareForm', { formId: quiz.id });
-                  }}
-                  android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
-                >
-                  <ShareIcon width={18} height={18} stroke="#000000" />
-                </Pressable>
-              </View>
-            </Pressable>
-          )})
+              );
+            })}
+          </View>
         )}
+
+        <View style={styles.bottomPad} />
       </PulseScrollView>
 
       {!embedded && <BottomTab navigation={navigation} currentRoute="Quizzes" />}
@@ -304,235 +440,4 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: CANVAS,
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 38,
-    fontFamily: F.outfitBlack,
-    color: INK,
-    letterSpacing: -0.8,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: CANVAS,
-  },
-  searchInput: {
-    backgroundColor: CANVAS,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    borderRadius: R_INPUT,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK,
-  },
-  filterTabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    gap: 8,
-    backgroundColor: CANVAS,
-  },
-  filterTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: CANVAS,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-  },
-  filterTabActive: {
-    backgroundColor: INK,
-    borderColor: INK,
-  },
-  filterTabText: {
-    fontSize: 14,
-    fontFamily: F.dmMedium,
-    color: INK_SOFT,
-  },
-  filterTabTextActive: {
-    color: CANVAS,
-  },
-  createBtn: {
-    backgroundColor: CANVAS,
-    borderWidth: BORDER_WIDTH,
-    borderColor: theme.primary,
-    borderRadius: R_CARD,
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  createContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-  },
-  plusIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  plusText: {
-    fontSize: 22,
-    fontFamily: F.dmBold,
-    color: theme.white,
-  },
-  createText: {
-    flex: 1,
-  },
-  createTitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontFamily: F.outfitBold,
-    color: theme.primary,
-    marginBottom: 3,
-  },
-  createDesc: {
-    fontSize: 14,
-    lineHeight: 19,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 100,
-  },
-  quizCard: {
-    flexDirection: 'row',
-    backgroundColor: CANVAS,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    borderRadius: R_CARD,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  quizIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  quizContent: {
-    flex: 1,
-  },
-  quizHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-  },
-  quizTitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontFamily: F.dmBold,
-    color: INK,
-    flex: 1,
-    marginRight: 8,
-  },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  typeBadgeText: {
-    fontSize: 10,
-    fontFamily: F.dmSemi,
-  },
-  quizClass: {
-    fontSize: 14,
-    lineHeight: 19,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginBottom: 8,
-  },
-  quizInfo: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  quizInfoText: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginRight: 12,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: ROW_DIVIDER,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  quizActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  actionBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: CANVAS,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontFamily: F.outfitExtraBold,
-    color: INK,
-    letterSpacing: -0.5,
-    marginTop: 16,
-    marginBottom: 10,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    lineHeight: 23,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-});
-
 export default Quizzes;
-

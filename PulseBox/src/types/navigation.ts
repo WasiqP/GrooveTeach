@@ -32,13 +32,13 @@ export type RootStackParamList = {
   ParentCommunication: { studentId?: string };
   AIAssistant: undefined;
   Reports: undefined;
-  // Legacy form screens (can be repurposed later)
   CreateForm: undefined;
-  FormBuilder: { answers?: any };
   EditForm: { formId: string };
   QuestionsScreen: { formId: string; questionId: string };
   SwapQuestions: { formId: string };
   ShareForm: { formId: string };
+  /** Full grade breakdown for one task (quiz, assignment, test, project, etc.). */
+  TaskGradeReport: { classId: string; taskId: string };
 };
 
 

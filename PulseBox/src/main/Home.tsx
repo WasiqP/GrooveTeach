@@ -1,35 +1,35 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   Platform,
+  TextInput,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainTabRoute, RootStackParamList } from '../types/navigation';
-import { theme, fonts as F, ink, radius } from '../theme';
+import { fonts as F, radius, useThemeMode } from '../theme';
 import Svg, { Path, Circle } from 'react-native-svg';
 import BottomTab from '../components/BottomTab';
 import { PulseScrollView } from '../components/PulseScrollView';
-import { useClasses } from '../context/ClassesContext';
+import {
+  useClasses,
+  type ClassActivityItem,
+  type ClassAnnouncement,
+} from '../context/ClassesContext';
 import { useForms } from '../context/FormsContext';
 import { useUser } from '../context/UserContext';
+import { usePulseAlert } from '../context/AlertModalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'> & {
   embedded?: boolean;
   onSelectTab?: (tab: MainTabRoute) => void;
 };
 
-const CANVAS = ink.canvas;
-const INK = ink.ink;
-const INK_SOFT = ink.inkSoft;
-const BORDER_INK = ink.borderInk;
-const BORDER_WIDTH = ink.borderWidth;
-const ROW_DIVIDER = ink.rowDivider;
-const ICON_WELL = ink.iconWell;
-const PRESS_TINT = ink.pressTint;
 
 const PAGE_H = 20;
 const R_CARD = radius.card;
@@ -164,6 +164,65 @@ const IconCircleCheck = ({ color, size = 22 }: { color: string; size?: number })
   </IconBase>
 );
 
+/** Settings / gear — top bar opens Settings tab */
+const IconSettings = ({ color, size = 22 }: { color: string; size?: number }) => (
+  <IconBase size={size}>
+    <Path
+      d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.5" />
+  </IconBase>
+);
+
+/**
+ * Megaphone — same artwork in the modal and on the home chip. Home uses a slight tilt via `View` (no SVG filters / “inner shadow”).
+ */
+const IconMegaphone = ({
+  color,
+  size = 22,
+  tiltDeg = 0,
+}: {
+  color: string;
+  size?: number;
+  tiltDeg?: number;
+}) => {
+  const inner = (
+    <IconBase size={size}>
+      <Path
+        d="M3 11V9a2 2 0 012-2h2l5-3v14l-5-3H5a2 2 0 01-2-2v-2z"
+        stroke={color}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M16 8v8M19 10v4"
+        stroke={color}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </IconBase>
+  );
+  if (!tiltDeg) {
+    return inner;
+  }
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        transform: [{ rotate: `${tiltDeg}deg` }],
+      }}
+    >
+      {inner}
+    </View>
+  );
+};
+
 type QuickItem = {
   key: string;
   title: string;
@@ -173,20 +232,32 @@ type QuickItem = {
 };
 
 const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab }) => {
-  const { classes } = useClasses();
+  const { classes, updateClass } = useClasses();
   const { forms } = useForms();
-  const { firstName } = useUser();
+  const { firstName, displayName } = useUser();
+  const { showAlert, showSuccess } = usePulseAlert();
+  const { ink, theme } = useThemeMode();
+
+  const [announcementDraft, setAnnouncementDraft] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [classPickerOpen, setClassPickerOpen] = useState(false);
+  const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (classes.length === 0) {
+      setSelectedClassId(null);
+      return;
+    }
+    setSelectedClassId(prev => {
+      if (prev && classes.some(c => c.id === prev)) return prev;
+      return classes[0].id;
+    });
+  }, [classes]);
 
   const heyLine = useMemo(() => {
-    const who = firstName.trim() || 'there';
-    return `Hey ${who}`;
-  }, [firstName]);
-
-  const avatarInitial = useMemo(() => {
-    const n = firstName.trim();
-    if (!n) return '?';
-    return n.charAt(0).toUpperCase();
-  }, [firstName]);
+    const name = firstName.trim() || displayName.trim().split(/\s+/)[0] || '';
+    return name ? `Hey ${name}` : 'Hey User';
+  }, [firstName, displayName]);
 
   const totalStudents = useMemo(
     () => classes.reduce((sum, c) => sum + (c.studentCount || 0), 0),
@@ -196,6 +267,72 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab }) => {
   const accent = theme.primary;
   const iconMuted = 'rgba(160, 96, 255, 0.55)';
   const chevronMuted = 'rgba(160, 96, 255, 0.45)';
+
+  const selectedClass = useMemo(
+    () => (selectedClassId ? classes.find(c => c.id === selectedClassId) : undefined),
+    [classes, selectedClassId],
+  );
+
+  const postAnnouncement = useCallback(() => {
+    if (!selectedClassId || !selectedClass) {
+      showAlert({
+        variant: 'warning',
+        title: 'Choose a class',
+        message: 'Create a class first, then pick it to post an announcement.',
+      });
+      return;
+    }
+    const body = announcementDraft.trim();
+    if (!body) {
+      showAlert({
+        variant: 'warning',
+        title: 'Empty announcement',
+        message: 'Write something before posting.',
+      });
+      return;
+    }
+    const createdAt = new Date().toISOString();
+    const next: ClassAnnouncement = {
+      id: `ann-${Date.now()}`,
+      body,
+      createdAt,
+    };
+    const merged = [next, ...(selectedClass.announcements ?? [])];
+    const activity: ClassActivityItem = {
+      id: `act-${Date.now()}`,
+      kind: 'announcement',
+      headline: 'Posted an announcement',
+      detail: body.length > 100 ? `${body.slice(0, 100)}…` : body,
+      createdAt,
+    };
+    void updateClass(selectedClass.id, {
+      announcements: merged,
+      activityLog: [activity, ...(selectedClass.activityLog ?? [])].slice(0, 40),
+    }).then(() => {
+      setAnnouncementDraft('');
+      setAnnouncementModalOpen(false);
+      showSuccess('Posted', `Announcement added for ${selectedClass.name}.`);
+    });
+  }, [
+    announcementDraft,
+    selectedClass,
+    selectedClassId,
+    updateClass,
+    showAlert,
+    showSuccess,
+  ]);
+
+  const openAnnouncementModal = useCallback(() => {
+    if (classes.length === 0) {
+      showAlert({
+        variant: 'warning',
+        title: 'No classes yet',
+        message: 'Create a class first, then you can post announcements to it.',
+      });
+      return;
+    }
+    setAnnouncementModalOpen(true);
+  }, [classes.length, showAlert]);
 
   const quickActions: QuickItem[] = useMemo(
     () => [
@@ -237,170 +374,18 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab }) => {
     [navigation, classes, accent, onSelectTab],
   );
 
-  return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.root}>
-        <PulseScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollInner}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={Platform.OS === 'android'}
-        >
-          <View style={[styles.page, { paddingHorizontal: PAGE_H }]}>
-            <View style={styles.topBar}>
-              <View style={styles.brandRow}>
-                <Text style={styles.brandGroove}>Groove</Text>
-                <Text style={styles.brandBox}>Box</Text>
-              </View>
-              <Pressable
-                style={styles.avatar}
-                onPress={() => onSelectTab?.('Settings')}
-                accessibilityRole="button"
-                accessibilityLabel="Open settings"
-                android_ripple={{ color: theme.rippleLight, borderless: true }}
-              >
-                <Text style={styles.avatarLetter}>{avatarInitial}</Text>
-              </Pressable>
-            </View>
+  const CANVAS = ink.canvas;
+  const INK = ink.ink;
+  const INK_SOFT = ink.inkSoft;
+  const BORDER_INK = ink.borderInk;
+  const BORDER_WIDTH = ink.borderWidth;
+  const ROW_DIVIDER = ink.rowDivider;
+  const ICON_WELL = ink.iconWell;
+  const PRESS_TINT = ink.pressTint;
 
-            <Text style={styles.greetingDisplay}>{heyLine}</Text>
-            <Text style={styles.tagline}>
-              Jump in — your classes and tools are ready when you are.
-            </Text>
-
-            <View style={styles.surfaceCard}>
-              <View style={styles.statsRow}>
-                <View style={styles.statBlock}>
-                  <Text style={styles.statNum}>{classes.length}</Text>
-                  <Text style={styles.statLab}>Classes</Text>
-                </View>
-                <View style={styles.statV} />
-                <View style={styles.statBlock}>
-                  <Text style={styles.statNum}>{totalStudents}</Text>
-                  <Text style={styles.statLab}>Students</Text>
-                </View>
-                <View style={styles.statV} />
-                <View style={styles.statBlock}>
-                  <Text style={styles.statNum}>{forms.length}</Text>
-                  <Text style={styles.statLab}>Saved items</Text>
-                </View>
-              </View>
-            </View>
-
-            <Text style={styles.sectionHeading}>What do you want to do next?</Text>
-
-            <View style={[styles.surfaceCard, styles.actionsCard]}>
-              {quickActions.map((item, index) => (
-                <Pressable
-                  key={item.key}
-                  style={({ pressed }) => [
-                    styles.actionRow,
-                    index < quickActions.length - 1 && styles.actionRowDivider,
-                    pressed && styles.actionRowPressed,
-                  ]}
-                  onPress={item.onPress}
-                  android_ripple={{ color: 'rgba(15,23,42,0.04)' }}
-                >
-                  <View style={styles.actionIconWell}>{item.icon}</View>
-                  <View style={styles.actionCopy}>
-                    <Text style={styles.actionTitle}>{item.title}</Text>
-                    <Text style={styles.actionSub}>{item.subtitle}</Text>
-                  </View>
-                  <IconChevronRight color={chevronMuted} size={20} />
-                </Pressable>
-              ))}
-            </View>
-
-            <View style={styles.classesHead}>
-              <View>
-                <Text style={styles.sectionHeadingTight}>Mark Attendance</Text>
-                <Text style={styles.sectionMeta}>
-                  {classes.length === 0
-                    ? 'Nothing here yet'
-                    : `${classes.length} active · ${totalStudents} students`}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => onSelectTab?.('MyClasses')}
-                style={styles.seeAll}
-                hitSlop={10}
-              >
-                <Text style={styles.seeAllText}>See all</Text>
-                <IconChevronRight color={accent} size={18} />
-              </Pressable>
-            </View>
-
-            {classes.length === 0 ? (
-              <View style={[styles.surfaceCard, styles.emptyCard]}>
-                <View style={styles.emptyIconWell}>
-                  <IconBook color={accent} size={26} />
-                </View>
-                <Text style={styles.emptyTitle}>No classes yet</Text>
-                <Text style={styles.emptyBody}>
-                  Add a class to track rosters, attendance, and work in one place.
-                </Text>
-                <Pressable
-                  style={styles.primaryBtn}
-                  onPress={() => navigation.navigate('CreateClass')}
-                  android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
-                >
-                  <Text style={styles.primaryBtnLabel}>Create a class</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View style={[styles.surfaceCard, styles.classListCard]}>
-                {classes.map((c, index) => (
-                  <Pressable
-                    key={c.id}
-                    style={({ pressed }) => [
-                      styles.classRow,
-                      index < classes.length - 1 && styles.classRowDivider,
-                      pressed && styles.classRowPressed,
-                    ]}
-                    onPress={() =>
-                      navigation.navigate('ClassDetails', { classId: c.id })
-                    }
-                    android_ripple={{ color: 'rgba(15,23,42,0.04)' }}
-                  >
-                      <View style={styles.classIconWell}>
-                        <IconBook color={accent} size={22} />
-                      </View>
-                      <View style={styles.classMain}>
-                        <Text style={styles.classTitle} numberOfLines={1}>
-                          {c.name}
-                        </Text>
-                        <Text style={styles.classMeta} numberOfLines={2}>
-                          {c.subject} · {c.gradeLevel} · {c.studentCount} students
-                        </Text>
-                      </View>
-                      <Pressable
-                        style={styles.classQuick}
-                        onPress={e => {
-                          e.stopPropagation();
-                          navigation.navigate('Attendance', { classId: c.id });
-                        }}
-                        accessibilityLabel="Open attendance"
-                        hitSlop={10}
-                      >
-                        <IconCircleCheck color={iconMuted} size={22} />
-                      </Pressable>
-                      <IconChevronRight color={chevronMuted} size={20} />
-                  </Pressable>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.bottomSpacer} />
-          </View>
-        </PulseScrollView>
-
-        {!embedded && <BottomTab navigation={navigation} currentRoute="Home" />}
-      </View>
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: CANVAS,
@@ -419,11 +404,27 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 8,
   },
-  topBar: {
+  headerBlock: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  headerRowTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 10,
+  },
+  headerRowGreeting: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  /** Keeps settings and megaphone centered on one vertical axis (same width as megaphone). */
+  headerRightIconSlot: {
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   brandRow: {
     flexDirection: 'row',
@@ -451,18 +452,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarLetter: {
-    fontSize: 16,
-    fontFamily: F.dmBold,
-    color: INK,
-  },
   greetingDisplay: {
+    flex: 1,
+    minWidth: 0,
     fontSize: 40,
     lineHeight: 44,
     fontFamily: F.outfitBlack,
     color: INK,
     letterSpacing: -1,
-    marginBottom: 10,
+  },
+  megaphoneBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.white,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  megaphoneBtnPressed: {
+    opacity: 0.9,
   },
   tagline: {
     fontSize: 17,
@@ -507,6 +517,265 @@ const styles = StyleSheet.create({
     fontFamily: F.dmSemi,
     color: INK_SOFT,
     letterSpacing: 0.2,
+  },
+  postAnnouncementHeading: {
+    marginTop: 30,
+    marginBottom: 8,
+    fontSize: 22,
+    lineHeight: 28,
+    fontFamily: F.outfitExtraBold,
+    color: INK,
+    letterSpacing: -0.5,
+  },
+  postAnnouncementSub: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontFamily: F.dmMedium,
+    color: INK_SOFT,
+    marginBottom: 14,
+  },
+  postAnnouncementCard: {
+    padding: 16,
+    marginBottom: 0,
+  },
+  announceModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  announceModalSheet: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    backgroundColor: theme.white,
+    borderRadius: R_CARD,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    padding: 18,
+    maxHeight: '88%',
+  },
+  announceModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+    gap: 8,
+  },
+  announceModalTitleBlock: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    minWidth: 0,
+  },
+  announceModalIconWell: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: ICON_WELL,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+  },
+  announceModalTitleText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  announceModalTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontFamily: F.outfitBold,
+    color: INK,
+    letterSpacing: -0.4,
+    marginBottom: 6,
+  },
+  announceModalSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+  },
+  announceModalClose: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: ink.canvas,
+    borderWidth: BORDER_WIDTH,
+    borderColor: ROW_DIVIDER,
+  },
+  announceModalCloseText: {
+    fontSize: 15,
+    color: INK_SOFT,
+    fontFamily: F.dmBold,
+    lineHeight: 18,
+  },
+  classPickerTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    minHeight: 56,
+    borderRadius: 12,
+    borderWidth: BORDER_WIDTH,
+    borderColor: ROW_DIVIDER,
+    backgroundColor: ink.canvas,
+  },
+  classPickerTriggerPressed: {
+    opacity: 0.92,
+  },
+  classPickerTriggerInner: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 4,
+    paddingRight: 4,
+  },
+  classPickerChevron: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 32,
+    minHeight: 40,
+    marginLeft: 4,
+  },
+  classPickerLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: F.dmSemi,
+    color: INK_SOFT,
+    marginBottom: 6,
+    letterSpacing: 0.2,
+  },
+  classPickerValue: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: F.dmBold,
+    color: INK,
+  },
+  classPickerValueMuted: {
+    fontFamily: F.dmMedium,
+    color: INK_SOFT,
+  },
+  announcementInput: {
+    minHeight: 100,
+    maxHeight: 180,
+    borderRadius: 12,
+    borderWidth: BORDER_WIDTH,
+    borderColor: ROW_DIVIDER,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: F.dmRegular,
+    color: INK,
+    marginBottom: 14,
+    backgroundColor: theme.white,
+  },
+  postAnnouncementBtn: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: theme.primary,
+  },
+  postAnnouncementBtnDisabled: {
+    opacity: 0.45,
+  },
+  postAnnouncementBtnPressed: {
+    opacity: 0.9,
+  },
+  postAnnouncementBtnText: {
+    fontSize: 16,
+    fontFamily: F.outfitBold,
+    color: theme.white,
+    letterSpacing: 0.2,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.45)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalSheet: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    backgroundColor: theme.white,
+    borderRadius: R_CARD,
+    borderWidth: BORDER_WIDTH,
+    borderColor: BORDER_INK,
+    maxHeight: '78%',
+    overflow: 'hidden',
+    paddingBottom: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontFamily: F.outfitBold,
+    color: INK,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ROW_DIVIDER,
+  },
+  modalList: {
+    flexGrow: 0,
+    maxHeight: 340,
+  },
+  modalListContent: {
+    paddingVertical: 8,
+    paddingBottom: 12,
+    flexGrow: 1,
+  },
+  modalRow: {
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+  },
+  modalRowWithDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ROW_DIVIDER,
+  },
+  modalRowTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  modalRowSelected: {
+    backgroundColor: theme.primarySoft,
+  },
+  modalRowPressed: {
+    backgroundColor: PRESS_TINT,
+  },
+  modalRowTitle: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: F.dmBold,
+    color: INK,
+    marginBottom: 6,
+  },
+  modalRowMeta: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: F.dmRegular,
+    color: INK_SOFT,
+  },
+  modalCancel: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginTop: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: ROW_DIVIDER,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontFamily: F.dmBold,
+    color: theme.primary,
   },
   sectionHeading: {
     marginTop: 30,
@@ -687,6 +956,411 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 8,
   },
-});
+}),
+    [ink, theme],
+  );
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.root}>
+        <PulseScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollInner}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews={Platform.OS === 'android'}
+        >
+          <View style={[styles.page, { paddingHorizontal: PAGE_H }]}>
+            <View style={styles.headerBlock}>
+              <View style={styles.headerRowTop}>
+                <View style={styles.brandRow}>
+                  <Text style={styles.brandGroove}>Groove</Text>
+                  <Text style={styles.brandBox}>Box</Text>
+                </View>
+                <View style={styles.headerRightIconSlot}>
+                  <Pressable
+                    style={styles.avatar}
+                    onPress={() => onSelectTab?.('Settings')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open settings"
+                    android_ripple={{ color: theme.rippleLight, borderless: true }}
+                  >
+                    <IconSettings color={INK} size={22} />
+                  </Pressable>
+                </View>
+              </View>
+              <View style={styles.headerRowGreeting}>
+                <Text style={styles.greetingDisplay} numberOfLines={2}>
+                  {heyLine}
+                </Text>
+                <View style={styles.headerRightIconSlot}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.megaphoneBtn,
+                      pressed && styles.megaphoneBtnPressed,
+                    ]}
+                    onPress={openAnnouncementModal}
+                    accessibilityRole="button"
+                    accessibilityLabel="Post announcement to a class"
+                    android_ripple={{ color: theme.rippleLight, borderless: false }}
+                  >
+                    <IconMegaphone color={accent} size={24} tiltDeg={-11} />
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+            <Text style={styles.tagline}>
+              Jump in — your classes and tools are ready when you are.
+            </Text>
+
+            <View style={styles.surfaceCard}>
+              <View style={styles.statsRow}>
+                <View style={styles.statBlock}>
+                  <Text style={styles.statNum}>{classes.length}</Text>
+                  <Text style={styles.statLab}>Classes</Text>
+                </View>
+                <View style={styles.statV} />
+                <View style={styles.statBlock}>
+                  <Text style={styles.statNum}>{totalStudents}</Text>
+                  <Text style={styles.statLab}>Students</Text>
+                </View>
+                <View style={styles.statV} />
+                <View style={styles.statBlock}>
+                  <Text style={styles.statNum}>{forms.length}</Text>
+                  <Text style={styles.statLab}>Saved items</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.classesHead}>
+              <View>
+                <Text style={styles.sectionHeadingTight}>Mark Attendance</Text>
+                <Text style={styles.sectionMeta}>
+                  {classes.length === 0
+                    ? 'Nothing here yet'
+                    : `${classes.length} active · ${totalStudents} students`}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => onSelectTab?.('MyClasses')}
+                style={styles.seeAll}
+                hitSlop={10}
+              >
+                <Text style={styles.seeAllText}>See all</Text>
+                <IconChevronRight color={accent} size={18} />
+              </Pressable>
+            </View>
+
+            {classes.length === 0 ? (
+              <View style={[styles.surfaceCard, styles.emptyCard]}>
+                <View style={styles.emptyIconWell}>
+                  <IconBook color={accent} size={26} />
+                </View>
+                <Text style={styles.emptyTitle}>No classes yet</Text>
+                <Text style={styles.emptyBody}>
+                  Add a class to track rosters, attendance, and work in one place.
+                </Text>
+                <Pressable
+                  style={styles.primaryBtn}
+                  onPress={() => navigation.navigate('CreateClass')}
+                  android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+                >
+                  <Text style={styles.primaryBtnLabel}>Create a class</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={[styles.surfaceCard, styles.classListCard]}>
+                {classes.map((c, index) => (
+                  <Pressable
+                    key={c.id}
+                    style={({ pressed }) => [
+                      styles.classRow,
+                      index < classes.length - 1 && styles.classRowDivider,
+                      pressed && styles.classRowPressed,
+                    ]}
+                    onPress={() =>
+                      navigation.navigate('ClassDetails', { classId: c.id })
+                    }
+                    android_ripple={{ color: 'rgba(15,23,42,0.04)' }}
+                  >
+                      <View style={styles.classIconWell}>
+                        <IconBook color={accent} size={22} />
+                      </View>
+                      <View style={styles.classMain}>
+                        <Text style={styles.classTitle} numberOfLines={1}>
+                          {c.name}
+                        </Text>
+                        <Text style={styles.classMeta} numberOfLines={2}>
+                          {c.subject} · {c.gradeLevel} · {c.studentCount} students
+                        </Text>
+                      </View>
+                      <Pressable
+                        style={styles.classQuick}
+                        onPress={e => {
+                          e.stopPropagation();
+                          navigation.navigate('Attendance', { classId: c.id });
+                        }}
+                        accessibilityLabel="Open attendance"
+                        hitSlop={10}
+                      >
+                        <IconCircleCheck color={iconMuted} size={22} />
+                      </Pressable>
+                      <IconChevronRight color={chevronMuted} size={20} />
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            <Text style={styles.sectionHeading}>What do you want to do next?</Text>
+
+            <View style={[styles.surfaceCard, styles.actionsCard]}>
+              {quickActions.map((item, index) => (
+                <Pressable
+                  key={item.key}
+                  style={({ pressed }) => [
+                    styles.actionRow,
+                    index < quickActions.length - 1 && styles.actionRowDivider,
+                    pressed && styles.actionRowPressed,
+                  ]}
+                  onPress={item.onPress}
+                  android_ripple={{ color: 'rgba(15,23,42,0.04)' }}
+                >
+                  <View style={styles.actionIconWell}>{item.icon}</View>
+                  <View style={styles.actionCopy}>
+                    <Text style={styles.actionTitle}>{item.title}</Text>
+                    <Text style={styles.actionSub}>{item.subtitle}</Text>
+                  </View>
+                  <IconChevronRight color={chevronMuted} size={20} />
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.postAnnouncementHeading}>Post announcement</Text>
+            <Text style={styles.postAnnouncementSub}>
+              Choose a class, write your message, and post — it shows on that class’s feed.
+            </Text>
+
+            <View style={[styles.surfaceCard, styles.postAnnouncementCard]}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.classPickerTrigger,
+                  pressed && styles.classPickerTriggerPressed,
+                ]}
+                onPress={() => classes.length > 0 && setClassPickerOpen(true)}
+                disabled={classes.length === 0}
+                android_ripple={{ color: 'rgba(15,23,42,0.06)' }}
+              >
+                <View style={styles.classPickerTriggerInner}>
+                  <Text style={styles.classPickerLabel}>Posting for</Text>
+                  <Text
+                    style={[
+                      styles.classPickerValue,
+                      classes.length === 0 && styles.classPickerValueMuted,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {classes.length === 0
+                      ? 'No classes yet — create one first'
+                      : selectedClass?.name ?? 'Select a class'}
+                  </Text>
+                </View>
+                {classes.length > 0 ? (
+                  <View style={styles.classPickerChevron}>
+                    <IconChevronRight color={chevronMuted} size={20} />
+                  </View>
+                ) : null}
+              </Pressable>
+
+              <TextInput
+                style={styles.announcementInput}
+                placeholder="Write an announcement…"
+                placeholderTextColor={INK_SOFT}
+                value={announcementDraft}
+                onChangeText={setAnnouncementDraft}
+                multiline
+                textAlignVertical="top"
+              />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.postAnnouncementBtn,
+                  (classes.length === 0 || !announcementDraft.trim()) &&
+                    styles.postAnnouncementBtnDisabled,
+                  pressed && styles.postAnnouncementBtnPressed,
+                ]}
+                onPress={postAnnouncement}
+                disabled={classes.length === 0 || !announcementDraft.trim()}
+                android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+              >
+                <Text style={styles.postAnnouncementBtnText}>Post announcement</Text>
+              </Pressable>
+            </View>
+
+            <Modal
+              visible={announcementModalOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() => {
+                setClassPickerOpen(false);
+                setAnnouncementModalOpen(false);
+              }}
+            >
+              <Pressable
+                style={styles.announceModalBackdrop}
+                onPress={() => {
+                  setClassPickerOpen(false);
+                  setAnnouncementModalOpen(false);
+                }}
+              >
+                <View
+                  style={styles.announceModalSheet}
+                  onStartShouldSetResponder={() => true}
+                >
+                  <View style={styles.announceModalHeader}>
+                    <View style={styles.announceModalTitleBlock}>
+                      <View style={styles.announceModalIconWell}>
+                        <IconMegaphone color={accent} size={22} />
+                      </View>
+                      <View style={styles.announceModalTitleText}>
+                        <Text style={styles.announceModalTitle}>New announcement</Text>
+                        <Text style={styles.announceModalSubtitle}>
+                          Pick a class and share an update — it appears on that class’s feed.
+                        </Text>
+                      </View>
+                    </View>
+                    <Pressable
+                      style={styles.announceModalClose}
+                      onPress={() => {
+                        setClassPickerOpen(false);
+                        setAnnouncementModalOpen(false);
+                      }}
+                      hitSlop={12}
+                      accessibilityLabel="Close"
+                    >
+                      <Text style={styles.announceModalCloseText}>✕</Text>
+                    </Pressable>
+                  </View>
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.classPickerTrigger,
+                      pressed && styles.classPickerTriggerPressed,
+                    ]}
+                    onPress={() => classes.length > 0 && setClassPickerOpen(true)}
+                    disabled={classes.length === 0}
+                    android_ripple={{ color: 'rgba(15,23,42,0.06)' }}
+                  >
+                    <View style={styles.classPickerTriggerInner}>
+                      <Text style={styles.classPickerLabel}>Announce to</Text>
+                      <Text
+                        style={[
+                          styles.classPickerValue,
+                          classes.length === 0 && styles.classPickerValueMuted,
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {classes.length === 0
+                          ? 'No classes — create one in Quick actions'
+                          : selectedClass?.name ?? 'Select a class'}
+                      </Text>
+                    </View>
+                    {classes.length > 0 ? (
+                      <View style={styles.classPickerChevron}>
+                        <IconChevronRight color={chevronMuted} size={20} />
+                      </View>
+                    ) : null}
+                  </Pressable>
+
+                  <TextInput
+                    style={styles.announcementInput}
+                    placeholder="What do you want to share?"
+                    placeholderTextColor={INK_SOFT}
+                    value={announcementDraft}
+                    onChangeText={setAnnouncementDraft}
+                    multiline
+                    textAlignVertical="top"
+                  />
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.postAnnouncementBtn,
+                      (classes.length === 0 || !announcementDraft.trim()) &&
+                        styles.postAnnouncementBtnDisabled,
+                      pressed && styles.postAnnouncementBtnPressed,
+                    ]}
+                    onPress={postAnnouncement}
+                    disabled={classes.length === 0 || !announcementDraft.trim()}
+                    android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+                  >
+                    <Text style={styles.postAnnouncementBtnText}>Post announcement</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Modal>
+
+            <Modal
+              visible={classPickerOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setClassPickerOpen(false)}
+            >
+              <Pressable
+                style={styles.modalBackdrop}
+                onPress={() => setClassPickerOpen(false)}
+              >
+                <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
+                  <Text style={styles.modalTitle}>Select class</Text>
+                  <ScrollView
+                    style={styles.modalList}
+                    contentContainerStyle={styles.modalListContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={classes.length > 4}
+                  >
+                    {classes.map((c, index) => (
+                      <Pressable
+                        key={c.id}
+                        style={({ pressed }) => [
+                          styles.modalRow,
+                          index < classes.length - 1 && styles.modalRowWithDivider,
+                          selectedClassId === c.id && styles.modalRowSelected,
+                          pressed && styles.modalRowPressed,
+                        ]}
+                        onPress={() => {
+                          setSelectedClassId(c.id);
+                          setClassPickerOpen(false);
+                        }}
+                        android_ripple={{ color: 'rgba(15,23,42,0.06)' }}
+                      >
+                        <View style={styles.modalRowTextCol}>
+                          <Text style={styles.modalRowTitle} numberOfLines={2}>
+                            {c.name}
+                          </Text>
+                          <Text style={styles.modalRowMeta} numberOfLines={2}>
+                            {c.subject} · {c.gradeLevel}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                  <Pressable
+                    style={styles.modalCancel}
+                    onPress={() => setClassPickerOpen(false)}
+                  >
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Modal>
+
+            <View style={styles.bottomSpacer} />
+          </View>
+        </PulseScrollView>
+
+        {!embedded && <BottomTab navigation={navigation} currentRoute="Home" />}
+      </View>
+    </SafeAreaView>
+  );
+};
+
+
 
 export default Home;

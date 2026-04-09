@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { ink } from '../theme/typography';
-import BackIcon from '../../assets/images/Back.svg';
+import { fonts as F, radius, useThemeMode } from '../theme';
+import BackButton from '../components/Reusable-Components/BackButton';
 import { PulseScrollView } from '../components/PulseScrollView';
 import { usePulseAlert } from '../context/AlertModalContext';
 import Svg, { Path } from 'react-native-svg';
@@ -21,6 +21,7 @@ const AIIcon = ({ size = 24, color = '#A060FF' }) => (
 );
 
 const LessonPlanner: React.FC<Props> = ({ navigation }) => {
+  const { ink, theme } = useThemeMode();
   const { showAlert, showSuccess } = usePulseAlert();
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
@@ -54,17 +55,195 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
     }, 2000);
   };
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        header: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 24,
+          paddingTop: 20,
+          paddingBottom: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.border,
+        },
+        backBtn: {
+          width: 40,
+          height: 40,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        headerTitle: {
+          fontSize: 20,
+          fontWeight: '700',
+          fontFamily: F.outfitBold,
+          color: ink.ink,
+        },
+        placeholder: {
+          width: 40,
+        },
+        scrollView: {
+          flex: 1,
+        },
+        scrollContent: {
+          paddingBottom: 60,
+        },
+        aiHeader: {
+          alignItems: 'center',
+          paddingTop: 32,
+          paddingBottom: 24,
+          paddingHorizontal: 24,
+        },
+        aiIconContainer: {
+          width: 80,
+          height: 80,
+          borderRadius: 40,
+          backgroundColor: theme.primarySoft,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 16,
+        },
+        aiTitle: {
+          fontSize: 24,
+          fontWeight: '700',
+          fontFamily: F.outfitBold,
+          color: ink.ink,
+          marginBottom: 8,
+        },
+        aiSubtitle: {
+          fontSize: 14,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+          textAlign: 'center',
+          lineHeight: 20,
+        },
+        form: {
+          paddingHorizontal: 24,
+          paddingTop: 8,
+        },
+        inputGroup: {
+          marginBottom: 20,
+        },
+        label: {
+          fontSize: 16,
+          fontWeight: '600',
+          fontFamily: F.dmSemi,
+          color: ink.ink,
+          marginBottom: 8,
+        },
+        input: {
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: radius.input,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          fontSize: 16,
+          fontFamily: F.dmRegular,
+          color: ink.ink,
+        },
+        textArea: {
+          height: 100,
+          textAlignVertical: 'top',
+          paddingTop: 14,
+        },
+        gradeScroll: {
+          marginTop: 8,
+        },
+        gradeChip: {
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+          borderRadius: 20,
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: theme.border,
+          marginRight: 8,
+        },
+        gradeChipActive: {
+          backgroundColor: theme.primary,
+          borderColor: theme.primary,
+        },
+        gradeChipText: {
+          fontSize: 14,
+          fontFamily: F.dmMedium,
+          color: ink.inkSoft,
+        },
+        gradeChipTextActive: {
+          color: theme.white,
+        },
+        generateBtn: {
+          backgroundColor: theme.primary,
+          borderRadius: radius.card,
+          paddingVertical: 18,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 8,
+          marginBottom: 24,
+          shadowColor: theme.primary,
+          shadowOpacity: 0.3,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 8,
+          elevation: 4,
+        },
+        generateBtnDisabled: {
+          opacity: 0.6,
+        },
+        generateBtnContent: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        },
+        loadingContainer: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+        },
+        generateBtnText: {
+          fontSize: 18,
+          fontWeight: '600',
+          fontFamily: F.dmSemi,
+          color: theme.white,
+        },
+        infoBox: {
+          backgroundColor: theme.primarySoft,
+          borderWidth: 1,
+          borderColor: theme.primary,
+          borderRadius: radius.input,
+          padding: 16,
+        },
+        infoTitle: {
+          fontSize: 16,
+          fontWeight: '600',
+          fontFamily: F.dmSemi,
+          color: ink.ink,
+          marginBottom: 8,
+        },
+        infoText: {
+          fontSize: 14,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+          marginBottom: 4,
+          lineHeight: 20,
+        },
+      }),
+    [ink, theme],
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable
+        <BackButton
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
-          android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
-        >
-          <BackIcon width={24} height={24} stroke="#000000" />
-        </Pressable>
+          stroke={ink.ink}
+          rippleColor="rgba(0,0,0,0.06)"
+        />
         <Text style={styles.headerTitle}>AI Lesson Planner</Text>
         <View style={styles.placeholder} />
       </View>
@@ -77,7 +256,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
         {/* AI Icon Header */}
         <View style={styles.aiHeader}>
           <View style={styles.aiIconContainer}>
-            <AIIcon size={48} color="#A060FF" />
+            <AIIcon size={48} color={theme.primary} />
           </View>
           <Text style={styles.aiTitle}>Generate Your Lesson Plan</Text>
           <Text style={styles.aiSubtitle}>
@@ -173,12 +352,12 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
           >
             {isGenerating ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <ActivityIndicator color={theme.white} size="small" />
                 <Text style={styles.generateBtnText}>Generating...</Text>
               </View>
             ) : (
               <View style={styles.generateBtnContent}>
-                <AIIcon size={24} color="#FFFFFF" />
+                <AIIcon size={24} color={theme.white} />
                 <Text style={styles.generateBtnText}>Generate Lesson Plan</Text>
               </View>
             )}
@@ -190,7 +369,7 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.infoText}>• Complete lesson objectives</Text>
             <Text style={styles.infoText}>• Step-by-step activities</Text>
             <Text style={styles.infoText}>• Required materials list</Text>
-            <Text style={styles.infoText}>• Assessment suggestions</Text>
+            <Text style={styles.infoText}>• Task suggestions</Text>
             <Text style={styles.infoText}>• Differentiation strategies</Text>
           </View>
         </View>
@@ -198,181 +377,6 @@ const LessonPlanner: React.FC<Props> = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-  },
-  placeholder: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 60,
-  },
-  aiHeader: {
-    alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
-  },
-  aiIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F8F5FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  aiTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  aiSubtitle: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  form: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    fontFamily: 'DMSans-Regular',
-    color: '#000000',
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-    paddingTop: 14,
-  },
-  gradeScroll: {
-    marginTop: 8,
-  },
-  gradeChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    marginRight: 8,
-  },
-  gradeChipActive: {
-    backgroundColor: '#A060FF',
-    borderColor: '#A060FF',
-  },
-  gradeChipText: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Medium',
-    color: '#1A1A22',
-  },
-  gradeChipTextActive: {
-    color: '#FFFFFF',
-  },
-  generateBtn: {
-    backgroundColor: '#A060FF',
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-    marginBottom: 24,
-    shadowColor: '#A060FF',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  generateBtnDisabled: {
-    opacity: 0.6,
-  },
-  generateBtnContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  generateBtnText: {
-    fontSize: 18,
-    fontWeight: '600',
-    fontFamily: 'DMSans-SemiBold',
-    color: '#FFFFFF',
-  },
-  infoBox: {
-    backgroundColor: '#F8F5FF',
-    borderWidth: 1,
-    borderColor: '#E0D5FF',
-    borderRadius: 12,
-    padding: 16,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#1A1A22',
-    marginBottom: 4,
-    lineHeight: 20,
-  },
-});
 
 export default LessonPlanner;
 

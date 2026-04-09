@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -14,11 +14,11 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { ink } from '../theme/typography';
+import { useThemeMode } from '../theme';
 import { useForms } from '../context/FormsContext';
 import { usePulseAlert } from '../context/AlertModalContext';
 import { PulseScrollView } from '../components/PulseScrollView';
-import BackIcon from '../../assets/images/Back.svg';
+import BackButton from '../components/Reusable-Components/BackButton';
 import ImageIcon from '../../assets/images/image.svg';
 import RazerAudioIcon from '../../assets/images/razer-audio.svg';
 import ShortTextIcon from '../../assets/images/short-text.svg';
@@ -109,6 +109,7 @@ const renderQuestionTypeIcon = (type: QuestionType, size: number = 24) => {
 };
 
 const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { ink, theme } = useThemeMode();
   const { formId, questionId } = route.params;
   const { forms, updateForm } = useForms();
   const { showAlert } = usePulseAlert();
@@ -258,18 +259,466 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
   const needsOptions = ['multipleChoice', 'checkbox', 'dropdown'].includes(questionData.type);
   const needsPlaceholder = ['shortText', 'longText', 'email'].includes(questionData.type);
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        header: {
+          paddingTop: 70,
+          paddingHorizontal: 24,
+          paddingBottom: 8,
+          borderBottomWidth: 1,
+          borderColor: theme.border,
+          flexDirection: 'row',
+          alignItems: 'center',
+        },
+        backBtn: {
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 10,
+        },
+        headerCenter: {
+          flex: 1,
+          alignItems: 'center',
+        },
+        screenTitle: {
+          fontSize: 16,
+          fontWeight: '700',
+          fontFamily: 'Outfit-Bold',
+          color: ink.ink,
+        },
+        saveHeaderBtn: {
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+        },
+        saveHeaderText: {
+          fontSize: 16,
+          fontFamily: 'DMSans-SemiBold',
+          color: theme.primary,
+        },
+        scrollView: {
+          flex: 1,
+        },
+        scrollContent: {
+          padding: 20,
+          paddingBottom: 80,
+        },
+        section: {
+          marginBottom: 24,
+        },
+        sectionLabel: {
+          fontSize: 14,
+          fontFamily: 'DMSans-SemiBold',
+          color: ink.ink,
+          marginBottom: 10,
+        },
+        textInput: {
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          fontSize: 16,
+          fontFamily: 'DMSans-Regular',
+          color: ink.ink,
+          minHeight: 48,
+        },
+        textArea: {
+          minHeight: 100,
+          textAlignVertical: 'top',
+        },
+        typeSelector: {
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        },
+        typeSelectorLeft: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          flex: 1,
+        },
+        typeSelectorText: {
+          fontSize: 16,
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+          marginLeft: 12,
+        },
+        chevron: {
+          fontSize: 24,
+          color: ink.ink,
+        },
+        optionsHeader: {
+          marginBottom: 10,
+        },
+        correctAnswerHint: {
+          fontSize: 12,
+          fontFamily: 'DMSans-Regular',
+          color: ink.inkSoft,
+          marginTop: 4,
+          fontStyle: 'italic',
+        },
+        optionRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 10,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          marginBottom: 10,
+        },
+        optionRowCorrect: {
+          backgroundColor: '#F0F8FF',
+          borderColor: '#4CAF50',
+          borderWidth: 2,
+        },
+        correctAnswerBtn: {
+          marginRight: 12,
+          width: 24,
+          height: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        correctAnswerCheckbox: {
+          width: 24,
+          height: 24,
+          borderRadius: 4,
+          borderWidth: 2,
+          borderColor: ink.borderInk,
+          backgroundColor: ink.canvas,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        correctAnswerCheckboxChecked: {
+          backgroundColor: '#4CAF50',
+          borderColor: '#4CAF50',
+        },
+        correctAnswerCheck: {
+          fontSize: 16,
+          color: theme.white,
+          fontWeight: 'bold',
+        },
+        optionText: {
+          flex: 1,
+          fontSize: 15,
+          fontFamily: 'DMSans-Regular',
+          color: ink.ink,
+        },
+        optionTextCorrect: {
+          fontFamily: 'DMSans-SemiBold',
+          color: '#2E7D32',
+        },
+        removeOptionBtn: {
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.border,
+        },
+        removeOptionText: {
+          fontSize: 20,
+          color: ink.ink,
+          lineHeight: 22,
+        },
+        addOptionRow: {
+          flexDirection: 'row',
+          gap: 10,
+          marginTop: 8,
+        },
+        optionInput: {
+          flex: 1,
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 10,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          fontSize: 15,
+          fontFamily: 'DMSans-Regular',
+          color: ink.ink,
+        },
+        addOptionBtn: {
+          backgroundColor: ink.ink,
+          borderRadius: 10,
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          justifyContent: 'center',
+        },
+        addOptionText: {
+          fontSize: 15,
+          fontFamily: 'DMSans-SemiBold',
+          color: theme.white,
+        },
+        settingRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+        },
+        settingLeft: {
+          flex: 1,
+          marginRight: 16,
+        },
+        settingLabel: {
+          fontSize: 16,
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+          marginBottom: 4,
+        },
+        settingDesc: {
+          fontSize: 12,
+          fontFamily: 'DMSans-Regular',
+          color: ink.inkSoft,
+        },
+        mediaBtn: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          marginBottom: 12,
+        },
+        mediaContent: {
+          flex: 1,
+          marginLeft: 14,
+        },
+        mediaLabel: {
+          fontSize: 16,
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+          marginBottom: 4,
+        },
+        mediaDesc: {
+          fontSize: 12,
+          fontFamily: 'DMSans-Regular',
+          color: ink.inkSoft,
+        },
+        mediaCheck: {
+          fontSize: 20,
+          color: ink.ink,
+          fontWeight: 'bold',
+        },
+        saveBtn: {
+          backgroundColor: ink.ink,
+          borderRadius: 12,
+          paddingVertical: 16,
+          alignItems: 'center',
+          marginTop: 20,
+        },
+        saveBtnText: {
+          fontSize: 16,
+          fontFamily: 'DMSans-SemiBold',
+          color: theme.white,
+        },
+        modalOverlay: {
+          flex: 1,
+          backgroundColor: 'rgba(255, 255, 255, 0.75)',
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        modalContent: {
+          backgroundColor: theme.card,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: ink.borderInk,
+          width: '90%',
+          maxHeight: '70%',
+          paddingVertical: 20,
+          shadowColor: ink.ink,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 8,
+        },
+        modalTitle: {
+          fontSize: 18,
+          fontFamily: 'Outfit-Bold',
+          color: ink.ink,
+          textAlign: 'center',
+          marginBottom: 16,
+          paddingHorizontal: 20,
+        },
+        typeList: {
+          maxHeight: 400,
+        },
+        typeOption: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          paddingVertical: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.border,
+        },
+        typeOptionSelected: {
+          backgroundColor: theme.backgroundAlt,
+        },
+        typeOptionIcon: {
+          marginRight: 14,
+          width: 24,
+          height: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        typeOptionLabel: {
+          flex: 1,
+          fontSize: 16,
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+        },
+        typeOptionLabelSelected: {
+          fontFamily: 'DMSans-SemiBold',
+          color: ink.ink,
+        },
+        typeOptionCheck: {
+          fontSize: 20,
+          color: ink.ink,
+          fontWeight: 'bold',
+        },
+        ratingOptions: {
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: 10,
+          marginBottom: 8,
+        },
+        ratingOption: {
+          width: 50,
+          height: 50,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          backgroundColor: theme.backgroundAlt,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        ratingOptionSelected: {
+          backgroundColor: ink.ink,
+        },
+        ratingOptionText: {
+          fontSize: 18,
+          fontFamily: 'DMSans-SemiBold',
+          color: ink.ink,
+        },
+        ratingOptionTextSelected: {
+          color: theme.white,
+        },
+        helperText: {
+          fontSize: 12,
+          fontFamily: 'DMSans-Regular',
+          color: ink.inkSoft,
+          marginTop: 8,
+        },
+        numberRow: {
+          flexDirection: 'row',
+          gap: 10,
+          marginBottom: 8,
+        },
+        numberInputContainer: {
+          flex: 1,
+        },
+        numberLabel: {
+          fontSize: 12,
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+          marginBottom: 8,
+        },
+        numberInput: {
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 12,
+          fontSize: 16,
+          fontFamily: 'DMSans-Regular',
+          color: ink.ink,
+          minHeight: 48,
+        },
+        dateFormatOptions: {
+          flexDirection: 'row',
+          gap: 10,
+          marginBottom: 16,
+        },
+        dateFormatOption: {
+          flex: 1,
+          backgroundColor: theme.backgroundAlt,
+          borderWidth: 1,
+          borderColor: ink.borderInk,
+          borderRadius: 12,
+          paddingVertical: 12,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        dateFormatOptionSelected: {
+          backgroundColor: ink.ink,
+        },
+        dateFormatOptionText: {
+          fontSize: 14,
+          fontFamily: 'DMSans-Medium',
+          color: ink.ink,
+        },
+        dateFormatOptionTextSelected: {
+          color: theme.white,
+        },
+        dateRow: {
+          gap: 12,
+        },
+        dateInputContainer: {
+          marginBottom: 0,
+        },
+        infoBox: {
+          backgroundColor: theme.primarySoft,
+          borderWidth: 1,
+          borderColor: theme.primary,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        },
+        infoText: {
+          fontSize: 14,
+          fontFamily: 'DMSans-Regular',
+          color: ink.inkSoft,
+          lineHeight: 20,
+        },
+      }),
+    [ink, theme],
+  );
+
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       {/* Header */}
       <View style={styles.header}>
-          <Pressable 
-          onPress={() => navigation.goBack()} 
-          style={styles.backBtn} 
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} 
-          android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
-        >
-          <BackIcon width={16} height={16} stroke="#000000" />
-        </Pressable>
+        <BackButton
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          size={16}
+          stroke="#000000"
+          rippleColor="rgba(0,0,0,0.06)"
+        />
         <View style={styles.headerCenter}>
           <Text style={styles.screenTitle}>Edit Question</Text>
         </View>
@@ -759,450 +1208,5 @@ const QuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    paddingTop: 70,
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderColor: '#E0E0E0',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  screenTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-  },
-  saveHeaderBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  saveHeaderText: {
-    fontSize: 16,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#A060FF',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 80,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-    marginBottom: 10,
-  },
-  textInput: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: 'DMSans-Regular',
-    color: '#000000',
-    minHeight: 48,
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  typeSelector: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  typeSelectorLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  typeSelectorText: {
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-    marginLeft: 12,
-  },
-  chevron: {
-    fontSize: 24,
-    color: '#000000',
-  },
-  optionsHeader: {
-    marginBottom: 10,
-  },
-  correctAnswerHint: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: ink.inkSoft,
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  optionRowCorrect: {
-    backgroundColor: '#F0F8FF',
-    borderColor: '#4CAF50',
-    borderWidth: 2,
-  },
-  correctAnswerBtn: {
-    marginRight: 12,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  correctAnswerCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#000000',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  correctAnswerCheckboxChecked: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
-  },
-  correctAnswerCheck: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  optionText: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: 'DMSans-Regular',
-    color: '#000000',
-  },
-  optionTextCorrect: {
-    fontFamily: 'DMSans-SemiBold',
-    color: '#2E7D32',
-  },
-  removeOptionBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E0E0E0',
-  },
-  removeOptionText: {
-    fontSize: 20,
-    color: '#000000',
-    lineHeight: 22,
-  },
-  addOptionRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-  },
-  optionInput: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    fontFamily: 'DMSans-Regular',
-    color: '#000000',
-  },
-  addOptionBtn: {
-    backgroundColor: '#000000',
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    justifyContent: 'center',
-  },
-  addOptionText: {
-    fontSize: 15,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#FFFFFF',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  settingLeft: {
-    flex: 1,
-    marginRight: 16,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  settingDesc: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: ink.inkSoft,
-  },
-  mediaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 12,
-  },
-  mediaContent: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  mediaLabel: {
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  mediaDesc: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: ink.inkSoft,
-  },
-  mediaCheck: {
-    fontSize: 20,
-    color: '#000000',
-    fontWeight: 'bold',
-  },
-  saveBtn: {
-    backgroundColor: '#000000',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  saveBtnText: {
-    fontSize: 16,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#FFFFFF',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#000000',
-    width: '90%',
-    maxHeight: '70%',
-    paddingVertical: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: 'Outfit-Bold',
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 20,
-  },
-  typeList: {
-    maxHeight: 400,
-  },
-  typeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  typeOptionSelected: {
-    backgroundColor: '#F5F5F5',
-  },
-  typeOptionIcon: {
-    marginRight: 14,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  typeOptionLabel: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-  },
-  typeOptionLabelSelected: {
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-  },
-  typeOptionCheck: {
-    fontSize: 20,
-    color: '#000000',
-    fontWeight: 'bold',
-  },
-  ratingOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 8,
-  },
-  ratingOption: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#000000',
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ratingOptionSelected: {
-    backgroundColor: '#000000',
-  },
-  ratingOptionText: {
-    fontSize: 18,
-    fontFamily: 'DMSans-SemiBold',
-    color: '#000000',
-  },
-  ratingOptionTextSelected: {
-    color: '#FFFFFF',
-  },
-  helperText: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    color: ink.inkSoft,
-    marginTop: 8,
-  },
-  numberRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 8,
-  },
-  numberInputContainer: {
-    flex: 1,
-  },
-  numberLabel: {
-    fontSize: 12,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  numberInput: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: 'DMSans-Regular',
-    color: '#000000',
-    minHeight: 48,
-  },
-  dateFormatOptions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  dateFormatOption: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateFormatOptionSelected: {
-    backgroundColor: '#000000',
-  },
-  dateFormatOptionText: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Medium',
-    color: '#000000',
-  },
-  dateFormatOptionTextSelected: {
-    color: '#FFFFFF',
-  },
-  dateRow: {
-    gap: 12,
-  },
-  dateInputContainer: {
-    marginBottom: 0,
-  },
-  infoBox: {
-    backgroundColor: '#F0F0FF',
-    borderWidth: 1,
-    borderColor: '#A060FF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  infoText: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: '#333',
-    lineHeight: 20,
-  },
-});
 
 export default QuestionsScreen;

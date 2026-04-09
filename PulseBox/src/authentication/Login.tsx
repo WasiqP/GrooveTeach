@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { theme, fonts as F, ink, radius } from '../theme';
+import { fonts as F, radius, useThemeMode } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
@@ -11,6 +11,121 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 const Login: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { ink, theme } = useThemeMode();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        screen: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+          paddingHorizontal: 28,
+          paddingTop: 0,
+        },
+        backBtn: {
+          alignSelf: 'flex-start',
+          marginBottom: 2,
+        },
+        brandRow: {
+          alignItems: 'center',
+          marginTop: -8,
+          marginBottom: 4,
+        },
+        logo: { width: 172, height: 146, maxWidth: '100%' },
+        content: { flex: 1 },
+        heading: {
+          fontSize: 36,
+          lineHeight: 40,
+          fontFamily: F.outfitBlack,
+          color: ink.ink,
+          marginTop: 4,
+          marginBottom: 10,
+          letterSpacing: -0.8,
+        },
+        subtitle: {
+          fontSize: 16,
+          lineHeight: 24,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+          marginBottom: 22,
+          maxWidth: 360,
+        },
+        input: {
+          width: '100%',
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          borderRadius: radius.input,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          fontSize: 15,
+          fontFamily: F.dmRegular,
+          color: ink.ink,
+          marginTop: 12,
+          backgroundColor: ink.canvas,
+        },
+        inputFirst: {
+          marginTop: 0,
+        },
+        primaryBtn: {
+          marginTop: 26,
+          backgroundColor: theme.primary,
+          paddingVertical: 16,
+          borderRadius: radius.btn,
+          alignItems: 'center',
+        },
+        primaryLabel: {
+          color: theme.white,
+          fontSize: 17,
+          fontFamily: F.outfitBold,
+        },
+        forgot: {
+          marginTop: 14,
+          fontSize: 13,
+          fontFamily: F.dmMedium,
+          color: ink.inkSoft,
+          textAlign: 'center',
+        },
+        alt: {
+          marginTop: 16,
+          fontSize: 14,
+          textAlign: 'center',
+          color: ink.inkSoft,
+          fontFamily: F.dmRegular,
+        },
+        socialHint: {
+          marginTop: 26,
+          fontSize: 13,
+          textAlign: 'center',
+          color: ink.inkSoft,
+          fontFamily: F.dmMedium,
+        },
+        socialRow: {
+          flexDirection: 'row',
+          justifyContent: 'center',
+          gap: 20,
+          marginTop: 14,
+        },
+        socialBtn: {
+          backgroundColor: ink.borderInk,
+          width: 110,
+          paddingVertical: 14,
+          borderRadius: radius.btn,
+          alignItems: 'center',
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+        },
+        socialText: {
+          color: theme.white,
+          fontSize: 18,
+          fontFamily: F.dmBold,
+        },
+        altLink: {
+          color: theme.primary,
+          fontFamily: F.outfitBold,
+        },
+      }),
+    [ink, theme],
+  );
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -82,115 +197,5 @@ const Login: React.FC<Props> = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-    paddingHorizontal: 28,
-    paddingTop: 0,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    marginBottom: 2,
-  },
-  brandRow: {
-    alignItems: 'center',
-    marginTop: -8,
-    marginBottom: 4,
-  },
-  logo: { width: 172, height: 146, maxWidth: '100%' },
-  content: { flex: 1 },
-  heading: {
-    fontSize: 36,
-    lineHeight: 40,
-    fontFamily: F.outfitBlack,
-    color: ink.ink,
-    marginTop: 4,
-    marginBottom: 10,
-    letterSpacing: -0.8,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontFamily: F.dmRegular,
-    color: ink.inkSoft,
-    marginBottom: 22,
-    maxWidth: 360,
-  },
-  input: {
-    width: '100%',
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-    borderRadius: radius.input,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: ink.ink,
-    marginTop: 12,
-    backgroundColor: ink.canvas,
-  },
-  inputFirst: {
-    marginTop: 0,
-  },
-  primaryBtn: {
-    marginTop: 26,
-    backgroundColor: theme.primary,
-    paddingVertical: 16,
-    borderRadius: radius.btn,
-    alignItems: 'center',
-  },
-  primaryLabel: {
-    color: theme.white,
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-  },
-  forgot: {
-    marginTop: 14,
-    fontSize: 13,
-    fontFamily: F.dmMedium,
-    color: ink.inkSoft,
-    textAlign: 'center',
-  },
-  alt: {
-    marginTop: 16,
-    fontSize: 14,
-    textAlign: 'center',
-    color: ink.inkSoft,
-    fontFamily: F.dmRegular,
-  },
-  socialHint: {
-    marginTop: 26,
-    fontSize: 13,
-    textAlign: 'center',
-    color: ink.inkSoft,
-    fontFamily: F.dmMedium,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-    marginTop: 14,
-  },
-  socialBtn: {
-    backgroundColor: ink.borderInk,
-    width: 110,
-    paddingVertical: 14,
-    borderRadius: radius.btn,
-    alignItems: 'center',
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-  },
-  socialText: {
-    color: theme.white,
-    fontSize: 18,
-    fontFamily: F.dmBold,
-  },
-  altLink: {
-    color: theme.primary,
-    fontFamily: F.outfitBold,
-  },
-});
 
 export default Login;

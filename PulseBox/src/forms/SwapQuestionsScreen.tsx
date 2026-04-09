@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable, PanResponder, Dimensions, Vibration } from 'react-native';
 import type { ScrollView } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Rect } from 'react-native-svg';
@@ -8,9 +8,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { useForms } from '../context/FormsContext';
-import { theme } from '../theme/Colors';
-import { ink } from '../theme/typography';
-import BackIcon from '../../assets/images/Back.svg';
+import { useThemeMode } from '../theme';
+import BackButton from '../components/Reusable-Components/BackButton';
 import { PulseScrollView } from '../components/PulseScrollView';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SwapQuestions'>;
@@ -21,6 +20,7 @@ interface QuestionItem {
 }
 
 const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { ink, theme } = useThemeMode();
   const { formId } = route.params;
   const { forms, updateForm } = useForms();
   const form = forms.find(f => f.id === formId);
@@ -34,6 +34,111 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
   const ITEM_HEIGHT = 64; // approximate row height for drag calculations
   const insets = useSafeAreaInsets();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        header: {
+          paddingTop: 70,
+          paddingHorizontal: 24,
+          paddingBottom: 8,
+          borderBottomWidth: 1,
+          borderColor: theme.border,
+          flexDirection: 'row',
+          justifyContent: 'space-evenly',
+          alignItems: 'center',
+        },
+        backBtn: {
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: theme.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 10,
+        },
+        headerRight: {
+          width: 32,
+        },
+        headerCenter: {
+          flex: 1,
+          alignItems: 'center',
+        },
+        screenTitle: {
+          fontSize: 16,
+          fontWeight: '700',
+          fontFamily: 'Outfit-Bold',
+          color: theme.text,
+        },
+        content: {
+          flex: 1,
+          paddingHorizontal: 20,
+          paddingTop: 20,
+          paddingBottom: 20,
+        },
+        infoSection: {
+          marginBottom: 20,
+          paddingBottom: 16,
+          borderBottomWidth: 1,
+          borderColor: theme.border,
+        },
+        infoTitle: {
+          fontSize: 20,
+          fontWeight: '700',
+          fontFamily: 'Outfit-Bold',
+          color: theme.text,
+          marginBottom: 8,
+        },
+        infoDesc: {
+          fontSize: 14,
+          fontFamily: 'DMSans-Regular',
+          color: ink.inkSoft,
+          lineHeight: 20,
+        },
+        swapList: {
+          paddingVertical: 6,
+          paddingBottom: 100,
+          flexGrow: 1,
+        },
+        swapItem: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: theme.card,
+          borderWidth: 1,
+          borderColor: theme.primary,
+          borderRadius: 10,
+          paddingVertical: 14,
+          paddingHorizontal: 16,
+          marginBottom: 12,
+        },
+        swapIndex: {
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: theme.primary,
+          textAlign: 'center',
+          textAlignVertical: 'center',
+          marginRight: 14,
+          fontSize: 14,
+          fontFamily: 'DMSans-Medium',
+          color: theme.text,
+          backgroundColor: ink.canvas,
+        },
+        swapText: {
+          flex: 1,
+          fontSize: 16,
+          fontFamily: 'DMSans-Medium',
+          color: theme.text,
+        },
+      }),
+    [ink, theme],
+  );
 
   useEffect(() => {
     // Derive questions from stored answers if present
@@ -204,14 +309,13 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
       </Svg>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable 
-          onPress={() => navigation.goBack()} 
-          style={styles.backBtn} 
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} 
-          android_ripple={{ color: 'rgba(160,96,255,0.12)', borderless: true }}
-        >
-          <BackIcon width={16} height={16} stroke={theme.text} />
-        </Pressable>
+        <BackButton
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          size={16}
+          stroke={theme.text}
+          rippleColor="rgba(160,96,255,0.12)"
+        />
         <View style={styles.headerCenter}>
           <Text style={styles.screenTitle}>Reorder Questions</Text>
         </View>
@@ -244,108 +348,6 @@ const SwapQuestionsScreen: React.FC<Props> = ({ route, navigation }) => {
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-  },
-  header: {
-    paddingTop: 70,
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderColor: theme.border,
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  headerRight: {
-    width: 32,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  screenTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: theme.text,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-  },
-  infoSection: {
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderColor: theme.border,
-  },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    color: theme.text,
-    marginBottom: 8,
-  },
-  infoDesc: {
-    fontSize: 14,
-    fontFamily: 'DMSans-Regular',
-    color: 'rgba(0,0,0,0.6)',
-    lineHeight: 20,
-  },
-  swapList: {
-    paddingVertical: 6,
-    paddingBottom: 100, // space for floating Save button
-    flexGrow: 1,
-  },
-  swapItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  swapIndex: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.primary,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    marginRight: 14,
-    fontSize: 14,
-    fontFamily: 'DMSans-Medium',
-    color: theme.text,
-    backgroundColor: ink.canvas,
-  },
-  swapText: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-    color: theme.text,
-  },
-  
-});
 
 export default SwapQuestionsScreen;
 

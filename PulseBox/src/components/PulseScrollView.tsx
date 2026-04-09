@@ -1,14 +1,12 @@
-import React, { forwardRef, useCallback, useState } from 'react';
+import React, { forwardRef, useCallback, useMemo, useState } from 'react';
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { ScrollView, ScrollViewProps, StyleSheet, View } from 'react-native';
-import { theme } from '../theme/Colors';
+import { useThemeMode } from '../theme';
 
 const THUMB_MIN = 28;
 const TRACK_W = 6;
 /** Ignore sub-pixel noise; custom track only when content truly overflows. */
 const OVERFLOW_EPS = 3;
-
-const PURPLE = theme.primary;
 
 export type PulseScrollViewProps = ScrollViewProps & {
   /** When false, plain vertical ScrollView (no purple track). Default true. */
@@ -34,6 +32,39 @@ export const PulseScrollView = forwardRef<ScrollView, PulseScrollViewProps>(func
   },
   ref,
 ) {
+  const { theme } = useThemeMode();
+  const primary = theme.primary;
+
+  const scrollStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        track: {
+          position: 'absolute',
+          right: 2,
+          top: 6,
+          bottom: 6,
+          width: TRACK_W,
+          borderRadius: TRACK_W / 2,
+          backgroundColor: theme.rippleLight,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: theme.rippleMedium,
+        },
+        thumb: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          borderRadius: TRACK_W / 2,
+          backgroundColor: primary,
+          shadowColor: primary,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.45,
+          shadowRadius: 4,
+          elevation: 3,
+        },
+      }),
+    [primary, theme.rippleLight, theme.rippleMedium],
+  );
+
   const [viewportH, setViewportH] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [scrollY, setScrollY] = useState(0);
@@ -110,8 +141,8 @@ export const PulseScrollView = forwardRef<ScrollView, PulseScrollViewProps>(func
         {children}
       </ScrollView>
       {showBar && (
-        <View style={styles.track} pointerEvents="none">
-          <View style={[styles.thumb, { height: thumbH, top: thumbTop }]} />
+        <View style={scrollStyles.track} pointerEvents="none">
+          <View style={[scrollStyles.thumb, { height: thumbH, top: thumbTop }]} />
         </View>
       )}
     </View>
@@ -124,28 +155,5 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  track: {
-    position: 'absolute',
-    right: 2,
-    top: 6,
-    bottom: 6,
-    width: TRACK_W,
-    borderRadius: TRACK_W / 2,
-    backgroundColor: 'rgba(160, 96, 255, 0.2)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(160, 96, 255, 0.4)',
-  },
-  thumb: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    borderRadius: TRACK_W / 2,
-    backgroundColor: PURPLE,
-    shadowColor: PURPLE,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 4,
-    elevation: 3,
   },
 });

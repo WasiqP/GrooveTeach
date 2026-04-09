@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { theme, fonts as F, ink, radius } from '../theme';
+import { fonts as F, radius, useThemeMode } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
 import { PulseScrollView } from '../components/PulseScrollView';
 import { useUser } from '../context/UserContext';
@@ -24,8 +24,10 @@ type Props = NativeStackScreenProps<RootStackParamList, 'VerifyOtp'>;
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
+const CELL = 48;
 
 const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
+  const { ink, theme } = useThemeMode();
   const { email, purpose, name } = route.params;
   const { setDisplayName } = useUser();
   const { showAlert, showSuccess } = usePulseAlert();
@@ -128,6 +130,152 @@ const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
       ? 'We sent a 6-digit code to your inbox. Enter it below to finish creating your account.'
       : 'We sent a 6-digit code to reset your password. Enter it below.';
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        flex: { flex: 1 },
+        screen: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+        },
+        backBtn: {
+          alignSelf: 'flex-start',
+          marginBottom: 2,
+        },
+        scrollContent: {
+          paddingHorizontal: 28,
+          paddingTop: 0,
+          paddingBottom: 24,
+          maxWidth: 480,
+          width: '100%',
+          alignSelf: 'center',
+        },
+        brandRow: {
+          alignItems: 'center',
+          marginBottom: 6,
+        },
+        logo: {
+          width: 118,
+          height: 100,
+          maxWidth: '100%',
+        },
+        inner: {
+          width: '100%',
+        },
+        sub: {
+          fontSize: 15,
+          fontFamily: F.dmMedium,
+          color: ink.inkSoft,
+          marginBottom: 4,
+        },
+        heading: {
+          fontSize: 32,
+          lineHeight: 36,
+          fontFamily: F.outfitBlack,
+          color: ink.ink,
+          marginBottom: 2,
+          letterSpacing: -0.8,
+        },
+        lede: {
+          fontSize: 15,
+          lineHeight: 22,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+          marginTop: -2,
+          marginBottom: 14,
+          maxWidth: 360,
+        },
+        emailPill: {
+          alignSelf: 'flex-start',
+          maxWidth: '100%',
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          borderRadius: radius.input,
+          backgroundColor: theme.primarySoft,
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          fontSize: 14,
+          fontFamily: F.dmSemi,
+          color: ink.ink,
+          marginBottom: 20,
+        },
+        otpRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          gap: 8,
+          marginBottom: 22,
+        },
+        otpCell: {
+          flex: 1,
+          minWidth: 40,
+          maxWidth: CELL + 8,
+          height: CELL + 4,
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          borderRadius: radius.input,
+          fontSize: 22,
+          fontFamily: F.outfitBold,
+          color: ink.ink,
+          textAlign: 'center',
+          paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+          backgroundColor: ink.canvas,
+        },
+        otpCellFilled: {
+          borderColor: theme.primary,
+          backgroundColor: 'rgba(160, 96, 255, 0.06)',
+        },
+        primaryBtn: {
+          backgroundColor: theme.primary,
+          paddingVertical: 14,
+          borderRadius: radius.btn,
+          alignItems: 'center',
+        },
+        primaryBtnDim: {
+          opacity: 0.55,
+        },
+        primaryLabel: {
+          color: theme.white,
+          fontSize: 17,
+          fontFamily: F.outfitBold,
+        },
+        resendRow: {
+          marginTop: 18,
+          alignItems: 'center',
+          minHeight: 24,
+        },
+        resendMuted: {
+          fontSize: 14,
+          fontFamily: F.dmRegular,
+          color: ink.inkSoft,
+        },
+        resendBold: {
+          fontFamily: F.dmBold,
+          color: ink.ink,
+        },
+        resendLink: {
+          fontSize: 14,
+          fontFamily: F.dmSemi,
+          color: theme.primary,
+        },
+        loginRow: {
+          marginTop: 20,
+          paddingBottom: 8,
+          alignItems: 'center',
+        },
+        alt: {
+          fontSize: 14,
+          textAlign: 'center',
+          color: ink.inkSoft,
+          fontFamily: F.dmRegular,
+        },
+        altLink: {
+          color: theme.primary,
+          fontFamily: F.outfitBold,
+        },
+      }),
+    [ink, theme],
+  );
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -226,149 +374,5 @@ const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
     </SafeAreaView>
   );
 };
-
-const CELL = 48;
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  screen: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    marginBottom: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 0,
-    paddingBottom: 24,
-    maxWidth: 480,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  brandRow: {
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  logo: {
-    width: 118,
-    height: 100,
-    maxWidth: '100%',
-  },
-  inner: {
-    width: '100%',
-  },
-  sub: {
-    fontSize: 15,
-    fontFamily: F.dmMedium,
-    color: ink.inkSoft,
-    marginBottom: 4,
-  },
-  heading: {
-    fontSize: 32,
-    lineHeight: 36,
-    fontFamily: F.outfitBlack,
-    color: ink.ink,
-    marginBottom: 2,
-    letterSpacing: -0.8,
-  },
-  lede: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: F.dmRegular,
-    color: ink.inkSoft,
-    marginTop: -2,
-    marginBottom: 14,
-    maxWidth: 360,
-  },
-  emailPill: {
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.input,
-    backgroundColor: theme.primarySoft,
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-    fontSize: 14,
-    fontFamily: F.dmSemi,
-    color: ink.ink,
-    marginBottom: 20,
-  },
-  otpRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 22,
-  },
-  otpCell: {
-    flex: 1,
-    minWidth: 40,
-    maxWidth: CELL + 8,
-    height: CELL + 4,
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-    borderRadius: radius.input,
-    fontSize: 22,
-    fontFamily: F.outfitBold,
-    color: ink.ink,
-    textAlign: 'center',
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    backgroundColor: ink.canvas,
-  },
-  otpCellFilled: {
-    borderColor: theme.primary,
-    backgroundColor: 'rgba(160, 96, 255, 0.06)',
-  },
-  primaryBtn: {
-    backgroundColor: theme.primary,
-    paddingVertical: 14,
-    borderRadius: radius.btn,
-    alignItems: 'center',
-  },
-  primaryBtnDim: {
-    opacity: 0.55,
-  },
-  primaryLabel: {
-    color: theme.white,
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-  },
-  resendRow: {
-    marginTop: 18,
-    alignItems: 'center',
-    minHeight: 24,
-  },
-  resendMuted: {
-    fontSize: 14,
-    fontFamily: F.dmRegular,
-    color: ink.inkSoft,
-  },
-  resendBold: {
-    fontFamily: F.dmBold,
-    color: ink.ink,
-  },
-  resendLink: {
-    fontSize: 14,
-    fontFamily: F.dmSemi,
-    color: theme.primary,
-  },
-  loginRow: {
-    marginTop: 20,
-    paddingBottom: 8,
-    alignItems: 'center',
-  },
-  alt: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: ink.inkSoft,
-    fontFamily: F.dmRegular,
-  },
-  altLink: {
-    color: theme.primary,
-    fontFamily: F.outfitBold,
-  },
-});
 
 export default VerifyOtp;

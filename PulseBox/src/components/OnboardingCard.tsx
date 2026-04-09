@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { theme, fonts as F, ink, radius } from '../theme';
+import { fonts as F, radius, useThemeMode } from '../theme';
 
 interface Props {
   Illustration: React.ComponentType<any>;
@@ -26,6 +26,7 @@ const OnboardingCard: React.FC<Props> = ({
   nextLabel = 'Continue',
   onSkip,
 }) => {
+  const { ink, theme } = useThemeMode();
   const { illusWidth, illusHeight } = useMemo(() => {
     const aspect = 1024 / 768;
     const maxZoneHeight = SCREEN_HEIGHT * 0.55 - 60;
@@ -42,6 +43,92 @@ const OnboardingCard: React.FC<Props> = ({
     }
     return { illusWidth: Math.round(w), illusHeight: Math.round(h) };
   }, []);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        screen: {
+          flex: 1,
+          backgroundColor: ink.canvas,
+          paddingHorizontal: 28,
+          paddingTop: 40,
+          paddingBottom: 32,
+        },
+        illustrationZone: {
+          flex: 0.55,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        textZone: {
+          flex: 0.45,
+          alignItems: 'center',
+        },
+        title: {
+          fontSize: 26,
+          lineHeight: 32,
+          fontFamily: F.outfitExtraBold,
+          color: ink.ink,
+          textAlign: 'center',
+          marginTop: 8,
+          letterSpacing: -0.5,
+        },
+        desc: {
+          fontSize: 15,
+          lineHeight: 22,
+          color: ink.inkSoft,
+          textAlign: 'center',
+          marginTop: 14,
+          fontFamily: F.dmRegular,
+          paddingHorizontal: 8,
+        },
+        pagination: {
+          flexDirection: 'row',
+          gap: 8,
+          marginTop: 24,
+        },
+        dot: {
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: ink.rowDivider,
+        },
+        dotActive: {
+          width: 18,
+          backgroundColor: theme.primary,
+        },
+        primaryBtn: {
+          marginTop: 28,
+          backgroundColor: theme.primary,
+          paddingVertical: 16,
+          paddingHorizontal: 32,
+          borderRadius: radius.btn,
+          alignSelf: 'stretch',
+          alignItems: 'center',
+        },
+        primaryLabel: {
+          color: theme.white,
+          fontSize: 17,
+          fontFamily: F.outfitBold,
+        },
+        secondaryBtn: {
+          marginTop: 14,
+          backgroundColor: ink.canvas,
+          borderWidth: ink.borderWidth,
+          borderColor: ink.borderInk,
+          paddingVertical: 15,
+          paddingHorizontal: 32,
+          borderRadius: radius.btn,
+          alignSelf: 'stretch',
+          alignItems: 'center',
+        },
+        secondaryLabel: {
+          color: ink.ink,
+          fontSize: 17,
+          fontFamily: F.outfitBold,
+        },
+      }),
+    [ink, theme],
+  );
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -76,87 +163,5 @@ const OnboardingCard: React.FC<Props> = ({
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: ink.canvas,
-    paddingHorizontal: 28,
-    paddingTop: 40,
-    paddingBottom: 32,
-  },
-  illustrationZone: {
-    flex: 0.55,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  textZone: {
-    flex: 0.45,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontFamily: F.outfitExtraBold,
-    color: ink.ink,
-    textAlign: 'center',
-    marginTop: 8,
-    letterSpacing: -0.5,
-  },
-  desc: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: ink.inkSoft,
-    textAlign: 'center',
-    marginTop: 14,
-    fontFamily: F.dmRegular,
-    paddingHorizontal: 8,
-  },
-  pagination: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 24,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: ink.rowDivider,
-  },
-  dotActive: {
-    width: 18,
-    backgroundColor: theme.primary,
-  },
-  primaryBtn: {
-    marginTop: 28,
-    backgroundColor: theme.primary,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: radius.btn,
-    alignSelf: 'stretch',
-    alignItems: 'center',
-  },
-  primaryLabel: {
-    color: theme.white,
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-  },
-  secondaryBtn: {
-    marginTop: 14,
-    backgroundColor: ink.canvas,
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-    paddingVertical: 15,
-    paddingHorizontal: 32,
-    borderRadius: radius.btn,
-    alignSelf: 'stretch',
-    alignItems: 'center',
-  },
-  secondaryLabel: {
-    color: ink.ink,
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-  },
-});
 
 export default OnboardingCard;

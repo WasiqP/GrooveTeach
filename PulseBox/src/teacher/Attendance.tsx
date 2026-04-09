@@ -1,14 +1,35 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  TextInput,
+  Platform,
+  Modal,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { theme, fonts as F, ink, radius } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
+import { useAttendanceStyles } from './useAttendanceStyles';
 import Svg, { Path } from 'react-native-svg';
 import { PulseScrollView } from '../components/PulseScrollView';
-import { useClasses, type ClassActivityItem } from '../context/ClassesContext';
+import {
+  useClasses,
+  type ClassActivityItem,
+  type AttendanceDayRecord,
+  type ClassStudentRecord,
+} from '../context/ClassesContext';
+import { parseStudentCsvRows } from '../utils/parseStudentCsv';
 import { usePulseAlert } from '../context/AlertModalContext';
+
+function localDateKey(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendance'>;
 
@@ -17,16 +38,6 @@ interface Student {
   name: string;
   status: 'present' | 'absent' | 'late' | null;
 }
-
-const CANVAS = ink.canvas;
-const INK = ink.ink;
-const INK_SOFT = ink.inkSoft;
-const BORDER_INK = ink.borderInk;
-const BORDER_WIDTH = ink.borderWidth;
-const ROW_DIVIDER = ink.rowDivider;
-const R_CARD = radius.card;
-const R_INPUT = radius.input;
-const R_BTN = radius.btn;
 
 const PRESENT = '#0D9488';
 const PRESENT_BG = 'rgba(13, 148, 136, 0.12)';
@@ -78,42 +89,118 @@ const ClockIcon = ({ size = 18, color = LATE }: { size?: number; color?: string 
   </Svg>
 );
 
-const BookIconSmall = ({ size = 22, color = theme.primary }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2Z"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
+function newStudentId(): string {
+  return `st-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 const Attendance: React.FC<Props> = ({ route, navigation }) => {
+  const { styles, ink, theme } = useAttendanceStyles();
+  const PlusIcon = ({ size = 22, color = theme.white }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 5V19M5 12H19" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+    </Svg>
+  );
+  const BookIconSmall = ({ size = 22, color = theme.primary }: { size?: number; color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+
   const insets = useSafeAreaInsets();
   const { classes, updateClass } = useClasses();
-  const { showAlert, showSuccess } = usePulseAlert();
+  const { showAlert, showSuccess, showError } = usePulseAlert();
   const [activeClassId, setActiveClassId] = useState<string | undefined>(() => route.params?.classId);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [students, setStudents] = useState<Student[]>([
-    { id: '1', name: 'Alice Johnson', status: null },
-    { id: '2', name: 'Bob Smith', status: null },
-    { id: '3', name: 'Charlie Brown', status: null },
-    { id: '4', name: 'Diana Prince', status: null },
-    { id: '5', name: 'Ethan Hunt', status: null },
-    { id: '6', name: 'Fiona Apple', status: null },
-    { id: '7', name: 'George Washington', status: null },
-    { id: '8', name: 'Hannah Montana', status: null },
-  ]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
+  const [csvPaste, setCsvPaste] = useState('');
+  const [addName, setAddName] = useState('');
+  const [addEmail, setAddEmail] = useState('');
+
+  const classInfo = useMemo(
+    () => (activeClassId ? classes.find((c) => c.id === activeClassId) : undefined),
+    [classes, activeClassId],
+  );
+
+  const roster: ClassStudentRecord[] = classInfo?.students ?? [];
+
+  const persistRosterToClass = (next: ClassStudentRecord[]) => {
+    if (!classInfo) return;
+    void updateClass(classInfo.id, {
+      students: next,
+      studentCount: next.length,
+    });
+  };
+
+  const openAddMenu = () => setAddMenuOpen(true);
+
+  const openAddOne = () => {
+    setAddMenuOpen(false);
+    setAddName('');
+    setAddEmail('');
+    setAddOpen(true);
+  };
+
+  const openCsvImport = () => {
+    setAddMenuOpen(false);
+    setCsvPaste('');
+    setCsvOpen(true);
+  };
+
+  const submitCsvImport = () => {
+    if (!classInfo) return;
+    const rows = parseStudentCsvRows(csvPaste);
+    if (rows.length === 0) {
+      showError('No rows found', 'Paste CSV lines with name and optional email, separated by commas.');
+      return;
+    }
+    const added: ClassStudentRecord[] = rows.map((r) => ({
+      id: newStudentId(),
+      name: r.name,
+      email: r.email,
+    }));
+    persistRosterToClass([...roster, ...added]);
+    setCsvPaste('');
+    setCsvOpen(false);
+    showSuccess(
+      'Imported',
+      `Added ${added.length} student${added.length === 1 ? '' : 's'} from CSV.`,
+    );
+  };
+
+  const submitAdd = () => {
+    if (!classInfo) return;
+    const name = addName.trim();
+    if (!name) {
+      showError('Name required', 'Enter a student name.');
+      return;
+    }
+    const email = addEmail.trim();
+    const row: ClassStudentRecord = {
+      id: newStudentId(),
+      name,
+      email: email ? email : undefined,
+    };
+    persistRosterToClass([...roster, row]);
+    setAddOpen(false);
+    showSuccess('Student added', `${name} was added to the class.`);
+  };
 
   useEffect(() => {
     if (route.params?.classId) {
@@ -122,15 +209,20 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
   }, [route.params?.classId]);
 
   useEffect(() => {
-    if (!activeClassId) return;
+    if (!activeClassId || !classInfo) return;
     setSearchQuery('');
-    setStudents((prev) => prev.map((s) => ({ ...s, status: null })));
-  }, [activeClassId]);
-
-  const classInfo = useMemo(
-    () => (activeClassId ? classes.find((c) => c.id === activeClassId) : undefined),
-    [classes, activeClassId],
-  );
+    const roster = classInfo.students ?? [];
+    const todayKey = localDateKey();
+    const todayRecord = classInfo.attendanceHistory?.find((r) => r.dateKey === todayKey);
+    const map = new Map(todayRecord?.entries.map((e) => [e.studentId, e.status]) ?? []);
+    setStudents(
+      roster.map((s) => ({
+        id: s.id,
+        name: s.name,
+        status: (map.get(s.id) as Student['status']) ?? null,
+      })),
+    );
+  }, [activeClassId, classInfo]);
 
   const filteredStudents = useMemo(
     () => students.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase())),
@@ -170,6 +262,19 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
     if (activeClassId) {
       const cls = classes.find((c) => c.id === activeClassId);
       if (cls) {
+        const dateKey = localDateKey();
+        const entries = roster.map((s) => ({
+          studentId: s.id,
+          status: (s.status ?? 'absent') as 'present' | 'absent' | 'late',
+        }));
+        const newDay: AttendanceDayRecord = {
+          id: `att-${Date.now()}`,
+          dateKey,
+          takenAt: new Date().toISOString(),
+          entries,
+        };
+        const prevHistory = cls.attendanceHistory ?? [];
+        const withoutSameDay = prevHistory.filter((r) => r.dateKey !== dateKey);
         const item: ClassActivityItem = {
           id: `act-${Date.now()}`,
           kind: 'attendance',
@@ -178,6 +283,7 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
           createdAt: new Date().toISOString(),
         };
         void updateClass(activeClassId, {
+          attendanceHistory: [newDay, ...withoutSameDay].slice(0, 400),
           activityLog: [item, ...(cls.activityLog ?? [])].slice(0, 40),
         });
       }
@@ -280,483 +386,339 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <View style={styles.headerText}>
-          <Text style={styles.title}>Mark attendance</Text>
-          <Text style={styles.subDate}>{dateLabel}</Text>
-          {classInfo ? (
-            <Text style={styles.subClass} numberOfLines={1}>
-              {classInfo.name}
-              <Text style={styles.subMeta}> · {classInfo.subject}</Text>
-            </Text>
-          ) : (
-            <Text style={styles.subClass}>Class</Text>
-          )}
-          <Pressable
-            onPress={() => setActiveClassId(undefined)}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Choose a different class"
-          >
-            <Text style={styles.changeClassLink}>Change class</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryEyebrow}>Today</Text>
-        <View style={styles.summaryGrid}>
-          <View style={[styles.summaryCell, { backgroundColor: PRESENT_BG }]}>
-            <Text style={[styles.summaryNum, { color: PRESENT }]}>{presentCount}</Text>
-            <Text style={styles.summaryLab}>Present</Text>
-          </View>
-          <View style={[styles.summaryCell, { backgroundColor: LATE_BG }]}>
-            <Text style={[styles.summaryNum, { color: LATE }]}>{lateCount}</Text>
-            <Text style={styles.summaryLab}>Late</Text>
-          </View>
-          <View style={[styles.summaryCell, { backgroundColor: ABSENT_BG }]}>
-            <Text style={[styles.summaryNum, { color: ABSENT }]}>{absentCount}</Text>
-            <Text style={styles.summaryLab}>Absent</Text>
-          </View>
-          <View style={[styles.summaryCell, styles.summaryCellMuted]}>
-            <Text style={[styles.summaryNum, { color: INK }]}>{unmarkedCount}</Text>
-            <Text style={styles.summaryLab}>Unmarked</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.searchWrap}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search students"
-          placeholderTextColor={ink.placeholder}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
       <PulseScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 108 + insets.bottom }]}
+        contentContainerStyle={[styles.scrollPageContent, { paddingBottom: 108 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        customTrack={students.length >= 10}
       >
-        <Text style={styles.listEyebrow}>
-          Roster · {filteredStudents.length} of {students.length}
-        </Text>
-        {filteredStudents.map((student) => (
-          <View key={student.id} style={styles.studentCard}>
-            <View style={styles.studentLeft}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarLetter}>{student.name.charAt(0).toUpperCase()}</Text>
-              </View>
-              <Text style={styles.studentName} numberOfLines={2}>
-                {student.name}
+        <View style={styles.header}>
+          <BackButton onPress={() => navigation.goBack()} />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Mark attendance</Text>
+            <Text style={styles.subDate}>{dateLabel}</Text>
+            {classInfo ? (
+              <Text style={styles.subClass} numberOfLines={1}>
+                {classInfo.name}
+                <Text style={styles.subMeta}> · {classInfo.subject}</Text>
               </Text>
+            ) : (
+              <Text style={styles.subClass}>Class</Text>
+            )}
+            <Pressable
+              onPress={() => setActiveClassId(undefined)}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Choose a different class"
+            >
+              <Text style={styles.changeClassLink}>Change class</Text>
+            </Pressable>
+          </View>
+          {classInfo ? (
+            <Pressable
+              style={({ pressed }) => [styles.headerAddBtn, pressed && styles.headerAddBtnPressed]}
+              onPress={openAddMenu}
+              accessibilityLabel="Add student or import from CSV"
+            >
+              <PlusIcon size={22} color={theme.white} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryEyebrow}>Today</Text>
+          <View style={styles.summaryGrid}>
+            <View style={[styles.summaryCell, { backgroundColor: PRESENT_BG }]}>
+              <Text style={[styles.summaryNum, { color: PRESENT }]}>{presentCount}</Text>
+              <Text style={styles.summaryLab}>Present</Text>
             </View>
-            <View style={styles.segment}>
-              <Pressable
-                accessibilityLabel={`${student.name} present`}
-                style={[
-                  styles.segBtn,
-                  styles.segLeft,
-                  student.status === 'present' && styles.segActivePresent,
-                ]}
-                onPress={() => handleStatusChange(student.id, 'present')}
-                android_ripple={{ color: 'rgba(13,148,136,0.15)' }}
-              >
-                <CheckIcon
-                  size={17}
-                  color={student.status === 'present' ? '#FFFFFF' : PRESENT}
-                />
-                <Text
-                  style={[
-                    styles.segLabel,
-                    student.status === 'present' && styles.segLabelOnLight,
-                  ]}
-                >
-                  Present
-                </Text>
-              </Pressable>
-              <View style={styles.segDivider} />
-              <Pressable
-                accessibilityLabel={`${student.name} late`}
-                style={[styles.segBtn, student.status === 'late' && styles.segActiveLate]}
-                onPress={() => handleStatusChange(student.id, 'late')}
-                android_ripple={{ color: 'rgba(217,119,6,0.15)' }}
-              >
-                <ClockIcon
-                  size={17}
-                  color={student.status === 'late' ? '#FFFFFF' : LATE}
-                />
-                <Text
-                  style={[
-                    styles.segLabel,
-                    student.status === 'late' && styles.segLabelOnLight,
-                  ]}
-                >
-                  Late
-                </Text>
-              </Pressable>
-              <View style={styles.segDivider} />
-              <Pressable
-                accessibilityLabel={`${student.name} absent`}
-                style={[styles.segBtn, styles.segRight, student.status === 'absent' && styles.segActiveAbsent]}
-                onPress={() => handleStatusChange(student.id, 'absent')}
-                android_ripple={{ color: 'rgba(220,38,38,0.12)' }}
-              >
-                <XIcon
-                  size={17}
-                  color={student.status === 'absent' ? '#FFFFFF' : ABSENT}
-                />
-                <Text
-                  style={[
-                    styles.segLabel,
-                    student.status === 'absent' && styles.segLabelOnLight,
-                  ]}
-                >
-                  Absent
-                </Text>
-              </Pressable>
+            <View style={[styles.summaryCell, { backgroundColor: LATE_BG }]}>
+              <Text style={[styles.summaryNum, { color: LATE }]}>{lateCount}</Text>
+              <Text style={styles.summaryLab}>Late</Text>
+            </View>
+            <View style={[styles.summaryCell, { backgroundColor: ABSENT_BG }]}>
+              <Text style={[styles.summaryNum, { color: ABSENT }]}>{absentCount}</Text>
+              <Text style={styles.summaryLab}>Absent</Text>
+            </View>
+            <View style={[styles.summaryCell, styles.summaryCellMuted]}>
+              <Text style={[styles.summaryNum, { color: ink.ink }]}>{unmarkedCount}</Text>
+              <Text style={styles.summaryLab}>Unmarked</Text>
             </View>
           </View>
-        ))}
+        </View>
+
+        <View style={styles.searchWrap}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search students"
+            placeholderTextColor={ink.placeholder}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        {classInfo ? (
+          <View style={styles.addWideWrap}>
+            <Pressable
+              style={styles.addWideBtn}
+              onPress={openAddMenu}
+              android_ripple={{ color: theme.rippleLight }}
+              accessibilityLabel="Add student or import from CSV"
+            >
+              <PlusIcon size={20} color={theme.white} />
+              <Text style={styles.addWideBtnTxt}>Add student</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        <View style={styles.scrollContent}>
+          {students.length === 0 ? (
+            <View style={styles.rosterEmpty}>
+              <Text style={styles.rosterEmptyTitle}>No students on this roster</Text>
+              <Text style={styles.rosterEmptyBody}>
+                Tap Add student to enter one name or import a list from CSV. They are saved to this class
+                and appear here for marking.
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.listEyebrow}>
+                Roster · {filteredStudents.length} of {students.length}
+              </Text>
+              {filteredStudents.map((student) => (
+                <View key={student.id} style={styles.studentCard}>
+                  <View style={styles.studentLeft}>
+                    <View style={styles.avatar}>
+                      <Text style={styles.avatarLetter}>{student.name.charAt(0).toUpperCase()}</Text>
+                    </View>
+                    <Text style={styles.studentName} numberOfLines={2}>
+                      {student.name}
+                    </Text>
+                  </View>
+                  <View style={styles.segment}>
+                    <Pressable
+                      accessibilityLabel={`${student.name} present`}
+                      style={[
+                        styles.segBtn,
+                        styles.segLeft,
+                        student.status === 'present' && styles.segActivePresent,
+                      ]}
+                      onPress={() => handleStatusChange(student.id, 'present')}
+                      android_ripple={{ color: 'rgba(13,148,136,0.15)' }}
+                    >
+                      <CheckIcon
+                        size={17}
+                        color={student.status === 'present' ? '#FFFFFF' : PRESENT}
+                      />
+                      <Text
+                        style={[
+                          styles.segLabel,
+                          student.status === 'present' && styles.segLabelOnLight,
+                        ]}
+                      >
+                        Present
+                      </Text>
+                    </Pressable>
+                    <View style={styles.segDivider} />
+                    <Pressable
+                      accessibilityLabel={`${student.name} late`}
+                      style={[styles.segBtn, student.status === 'late' && styles.segActiveLate]}
+                      onPress={() => handleStatusChange(student.id, 'late')}
+                      android_ripple={{ color: 'rgba(217,119,6,0.15)' }}
+                    >
+                      <ClockIcon
+                        size={17}
+                        color={student.status === 'late' ? '#FFFFFF' : LATE}
+                      />
+                      <Text
+                        style={[
+                          styles.segLabel,
+                          student.status === 'late' && styles.segLabelOnLight,
+                        ]}
+                      >
+                        Late
+                      </Text>
+                    </Pressable>
+                    <View style={styles.segDivider} />
+                    <Pressable
+                      accessibilityLabel={`${student.name} absent`}
+                      style={[
+                        styles.segBtn,
+                        styles.segRight,
+                        student.status === 'absent' && styles.segActiveAbsent,
+                      ]}
+                      onPress={() => handleStatusChange(student.id, 'absent')}
+                      android_ripple={{ color: 'rgba(220,38,38,0.12)' }}
+                    >
+                      <XIcon
+                        size={17}
+                        color={student.status === 'absent' ? '#FFFFFF' : ABSENT}
+                      />
+                      <Text
+                        style={[
+                          styles.segLabel,
+                          student.status === 'absent' && styles.segLabelOnLight,
+                        ]}
+                      >
+                        Absent
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </>
+          )}
+        </View>
       </PulseScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Pressable
-          style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
+          style={({ pressed }) => [
+            styles.saveBtn,
+            students.length === 0 && styles.saveBtnDisabled,
+            pressed && students.length > 0 && styles.saveBtnPressed,
+          ]}
           onPress={handleSave}
-          android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+          disabled={students.length === 0}
+          android_ripple={
+            students.length === 0 ? undefined : { color: 'rgba(255,255,255,0.2)' }
+          }
         >
           <Text style={styles.saveBtnText}>Save attendance</Text>
         </Pressable>
       </View>
+
+      <Modal
+        visible={addMenuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAddMenuOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalDimmer} onPress={() => setAddMenuOpen(false)} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCenter}
+            pointerEvents="box-none"
+          >
+            <View style={styles.menuCard}>
+              <Text style={styles.menuTitle}>Add to roster</Text>
+              <Text style={styles.menuHint}>Choose how you want to add students.</Text>
+              <Pressable
+                style={({ pressed }) => [styles.menuOption, pressed && styles.menuOptionPressed]}
+                onPress={openAddOne}
+                android_ripple={{ color: theme.rippleLight }}
+              >
+                <Text style={styles.menuOptionTitle}>Add one student</Text>
+                <Text style={styles.menuOptionSub}>Enter name and optional email</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.menuOption, pressed && styles.menuOptionPressed]}
+                onPress={openCsvImport}
+                android_ripple={{ color: theme.rippleLight }}
+              >
+                <Text style={styles.menuOptionTitle}>Import from CSV</Text>
+                <Text style={styles.menuOptionSub}>
+                  Add students in bulk — paste a list (name and optional email per line)
+                </Text>
+              </Pressable>
+              <Pressable style={styles.menuDismiss} onPress={() => setAddMenuOpen(false)}>
+                <Text style={styles.menuDismissTxt}>Cancel</Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      <Modal visible={addOpen} transparent animationType="fade" onRequestClose={() => setAddOpen(false)}>
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalDimmer} onPress={() => setAddOpen(false)} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCenter}
+            pointerEvents="box-none"
+          >
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Add student</Text>
+              <Text style={styles.modalHint}>Name is required. Email is optional.</Text>
+              <Text style={styles.inputLabel}>Name</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g. Alex Morgan"
+                placeholderTextColor={ink.placeholder}
+                value={addName}
+                onChangeText={setAddName}
+              />
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="student@school.edu"
+                placeholderTextColor={ink.placeholder}
+                value={addEmail}
+                onChangeText={setAddEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+              <View style={styles.modalActions}>
+                <Pressable style={styles.modalCancel} onPress={() => setAddOpen(false)}>
+                  <Text style={styles.modalCancelTxt}>Cancel</Text>
+                </Pressable>
+                <Pressable style={styles.modalSave} onPress={submitAdd}>
+                  <Text style={styles.modalSaveTxt}>Add</Text>
+                </Pressable>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      <Modal visible={csvOpen} transparent animationType="fade" onRequestClose={() => setCsvOpen(false)}>
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalDimmer} onPress={() => setCsvOpen(false)} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCenter}
+            pointerEvents="box-none"
+          >
+            <View style={styles.csvCard}>
+              <Text style={styles.modalTitle}>Import from CSV</Text>
+              <Text style={styles.csvDetailHeading}>Adding students in bulk</Text>
+              <Text style={styles.csvDetailBody}>
+                Use this when you have a class list from a spreadsheet, a school export, or another
+                roster. Paste the list below—each line becomes one student on this class. Existing
+                students are not removed; new rows are added to the roster.
+              </Text>
+              <Text style={styles.csvHelpLabel}>Format</Text>
+              <Text style={styles.csvHelp}>
+                One student per line: <Text style={styles.csvMono}>Name, email</Text>. Email is optional.
+                You can include an optional header row with “name” and “email”. Paste from a .csv file or
+                copy columns from Excel or Google Sheets.
+              </Text>
+              <TextInput
+                style={styles.csvTextarea}
+                placeholder={'Alex Morgan, alex@school.edu\nJordan Lee'}
+                placeholderTextColor={ink.placeholder}
+                value={csvPaste}
+                onChangeText={setCsvPaste}
+                multiline
+                textAlignVertical="top"
+                scrollEnabled
+              />
+              <View style={styles.csvActions}>
+                <Pressable style={styles.modalCancel} onPress={() => setCsvOpen(false)}>
+                  <Text style={styles.modalCancelTxt}>Cancel</Text>
+                </Pressable>
+                <Pressable style={styles.csvConfirm} onPress={submitCsvImport}>
+                  <Text style={styles.modalSaveTxt}>Add to roster</Text>
+                </Pressable>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: CANVAS,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ROW_DIVIDER,
-    backgroundColor: CANVAS,
-  },
-  headerText: {
-    flex: 1,
-    paddingLeft: 4,
-    minWidth: 0,
-  },
-  title: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontFamily: F.outfitBlack,
-    color: INK,
-    letterSpacing: -0.6,
-    marginBottom: 4,
-  },
-  subDate: {
-    fontSize: 14,
-    fontFamily: F.dmMedium,
-    color: INK_SOFT,
-    marginBottom: 2,
-  },
-  subClass: {
-    fontSize: 15,
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  subMeta: {
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    fontWeight: '400',
-  },
-  summaryCard: {
-    marginHorizontal: 20,
-    marginTop: 16,
-    padding: 16,
-    borderRadius: R_CARD,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    backgroundColor: CANVAS,
-  },
-  summaryEyebrow: {
-    fontSize: 11,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  summaryCell: {
-    flexGrow: 1,
-    minWidth: '22%',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-  summaryCellMuted: {
-    backgroundColor: 'rgba(26, 26, 34, 0.06)',
-  },
-  summaryNum: {
-    fontSize: 22,
-    lineHeight: 26,
-    fontFamily: F.outfitBold,
-    marginBottom: 2,
-  },
-  summaryLab: {
-    fontSize: 11,
-    fontFamily: F.dmMedium,
-    color: INK_SOFT,
-  },
-  searchWrap: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  searchInput: {
-    backgroundColor: CANVAS,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    borderRadius: R_INPUT,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  listEyebrow: {
-    fontSize: 11,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-  },
-  studentCard: {
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    borderRadius: R_CARD,
-    padding: 14,
-    marginBottom: 10,
-    backgroundColor: CANVAS,
-  },
-  studentLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: theme.primarySoft,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarLetter: {
-    fontSize: 16,
-    fontFamily: F.dmBold,
-    color: theme.primary,
-  },
-  studentName: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: F.dmSemi,
-    color: INK,
-  },
-  segment: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    borderRadius: 12,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(26, 26, 34, 0.03)',
-  },
-  segBtn: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    gap: 4,
-  },
-  segLeft: {},
-  segRight: {},
-  segDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: ROW_DIVIDER,
-  },
-  segLabel: {
-    fontSize: 11,
-    fontFamily: F.dmSemi,
-    color: INK_SOFT,
-  },
-  segLabelOnLight: {
-    color: '#FFFFFF',
-  },
-  segActivePresent: {
-    backgroundColor: PRESENT,
-  },
-  segActiveLate: {
-    backgroundColor: LATE,
-  },
-  segActiveAbsent: {
-    backgroundColor: ABSENT,
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: ROW_DIVIDER,
-    backgroundColor: CANVAS,
-  },
-  saveBtn: {
-    backgroundColor: theme.primary,
-    borderRadius: R_BTN,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveBtnPressed: {
-    opacity: 0.92,
-  },
-  saveBtnText: {
-    fontSize: 17,
-    fontFamily: F.outfitBold,
-    color: theme.white,
-  },
-  pickSub: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginTop: 4,
-  },
-  pickScrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  pickEmpty: {
-    paddingVertical: 32,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-  pickEmptyTitle: {
-    fontSize: 20,
-    fontFamily: F.outfitExtraBold,
-    color: INK,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  pickEmptyBody: {
-    fontSize: 15,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 20,
-    maxWidth: 300,
-  },
-  pickPrimaryBtn: {
-    backgroundColor: theme.primary,
-    borderRadius: R_BTN,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-  },
-  pickPrimaryBtnText: {
-    fontSize: 16,
-    fontFamily: F.outfitBold,
-    color: theme.white,
-  },
-  pickCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    borderRadius: R_CARD,
-    padding: 14,
-    marginBottom: 10,
-    backgroundColor: CANVAS,
-  },
-  pickCardPressed: {
-    opacity: 0.92,
-  },
-  pickIconWell: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: theme.primarySoft,
-    borderWidth: BORDER_WIDTH,
-    borderColor: BORDER_INK,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  pickCardMain: {
-    flex: 1,
-    minWidth: 0,
-  },
-  pickCardTitle: {
-    fontSize: 17,
-    fontFamily: F.dmSemi,
-    color: INK,
-    marginBottom: 4,
-  },
-  pickCardMeta: {
-    fontSize: 14,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    lineHeight: 20,
-  },
-  pickCardSchedule: {
-    fontSize: 12,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginTop: 4,
-  },
-  pickChevron: {
-    fontSize: 22,
-    fontFamily: F.dmRegular,
-    color: INK_SOFT,
-    marginLeft: 4,
-  },
-  changeClassLink: {
-    marginTop: 8,
-    fontSize: 14,
-    fontFamily: F.dmSemi,
-    color: theme.primary,
-  },
-});
 
 export default Attendance;
