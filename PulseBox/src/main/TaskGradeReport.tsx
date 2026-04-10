@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { useClasses, type ClassStudentRecord } from '../context/ClassesContext';
@@ -222,8 +222,28 @@ const DownloadIcon = ({ size = 24, color = '#A060FF' }: { size?: number; color?:
   </Svg>
 );
 
+const InfoCircleIcon = ({ size = 20, color }: { size?: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 16V12M12 8H12.01"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
   const { ink, theme } = useThemeMode();
+  const insets = useSafeAreaInsets();
   const { classId, taskId } = route.params;
   const { classes } = useClasses();
   const { tasks, getGrade } = useGradesTasks();
@@ -364,7 +384,6 @@ const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 40,
   },
   hero: {
     marginBottom: 22,
@@ -455,11 +474,12 @@ const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
     color: ink.inkSoft,
   },
   table: {
-    borderRadius: 12,
+    borderRadius: radius.card,
     borderWidth: ink.borderWidth,
     borderColor: ink.borderInk,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: 4,
+    backgroundColor: theme.white,
   },
   tableHead: {
     flexDirection: 'row',
@@ -489,9 +509,9 @@ const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
   tr: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    backgroundColor: ink.canvas,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: theme.white,
   },
   trDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -535,6 +555,8 @@ const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
     borderWidth: ink.borderWidth,
     borderColor: ink.borderInk,
     borderStyle: 'dashed',
+    backgroundColor: theme.white,
+    marginBottom: 4,
   },
   emptyBody: {
     fontSize: 15,
@@ -542,15 +564,91 @@ const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
     fontFamily: F.dmRegular,
     color: ink.inkSoft,
   },
-  footerNote: {
+  footerSection: {
+    marginTop: 20,
+    borderRadius: radius.card,
+    borderWidth: ink.borderWidth,
+    borderColor: ink.borderInk,
+    backgroundColor: theme.white,
+    overflow: 'hidden',
+  },
+  footerAccent: {
+    height: 4,
+    backgroundColor: theme.primary,
+    opacity: 0.85,
+  },
+  footerInner: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 18,
+  },
+  footerEyebrow: {
+    fontSize: 11,
+    fontFamily: F.dmSemi,
+    color: ink.inkSoft,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  footerTitle: {
+    fontSize: 18,
+    fontFamily: F.outfitBold,
+    color: ink.ink,
+    letterSpacing: -0.35,
+    marginBottom: 8,
+  },
+  footerLead: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontFamily: F.dmRegular,
+    color: ink.inkSoft,
+    marginBottom: 16,
+  },
+  exportPdfBtn: {
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderRadius: radius.btn,
+    backgroundColor: theme.primary,
+    borderWidth: ink.borderWidth,
+    borderColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  exportPdfBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  exportPdfBtnDisabled: {
+    opacity: 0.65,
+  },
+  exportPdfBtnTxt: {
+    fontSize: 16,
+    fontFamily: F.outfitBold,
+    color: theme.white,
+  },
+  footerDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: ink.rowDivider,
+    marginVertical: 18,
+  },
+  dataNoteWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: theme.primarySoft,
+    borderWidth: ink.borderWidth,
+    borderColor: ink.borderInk,
+  },
+  dataNoteText: {
+    flex: 1,
     fontSize: 13,
     lineHeight: 19,
     fontFamily: F.dmRegular,
-    color: ink.inkSoft,
-    fontStyle: 'italic',
-  },
-  bottomPad: {
-    height: 24,
+    color: ink.ink,
   },
   notFound: {
     flex: 1,
@@ -632,7 +730,10 @@ const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
       <PulseScrollView
         customTrack={false}
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 28 + Math.max(insets.bottom, 20) },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
@@ -722,11 +823,41 @@ const TaskGradeReport: React.FC<Props> = ({ navigation, route }) => {
           </View>
         )}
 
-        <Text style={styles.footerNote}>
-          Grades are stored per student for this task. Use View grades filters to compare tasks or
-          classes.
-        </Text>
-        <View style={styles.bottomPad} />
+        <View style={styles.footerSection}>
+          <View style={styles.footerAccent} />
+          <View style={styles.footerInner}>
+            <Text style={styles.footerEyebrow}>Export & backup</Text>
+            <Text style={styles.footerTitle}>Share this grade sheet</Text>
+            <Text style={styles.footerLead}>
+              Generate a PDF with the roster and scores shown above—ready to email, print, or archive.
+            </Text>
+            <Pressable
+              style={[styles.exportPdfBtn, downloading && styles.exportPdfBtnDisabled]}
+              onPress={() => void handleDownloadPdf()}
+              disabled={downloading}
+              android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+              accessibilityRole="button"
+              accessibilityLabel="Export grade report as PDF"
+            >
+              {downloading ? (
+                <ActivityIndicator size="small" color={theme.white} />
+              ) : (
+                <View style={styles.exportPdfBtnInner}>
+                  <DownloadIcon size={20} color={theme.white} />
+                  <Text style={styles.exportPdfBtnTxt}>Export PDF</Text>
+                </View>
+              )}
+            </Pressable>
+            <View style={styles.footerDivider} />
+            <View style={styles.dataNoteWrap}>
+              <InfoCircleIcon color={theme.primary} size={20} />
+              <Text style={styles.dataNoteText}>
+                Grades are stored per student for this task. Open View grades to compare other tasks or
+                classes.
+              </Text>
+            </View>
+          </View>
+        </View>
       </PulseScrollView>
     </SafeAreaView>
   );

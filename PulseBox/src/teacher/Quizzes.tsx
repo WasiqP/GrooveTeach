@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,14 @@ import BottomTab from '../components/BottomTab';
 import { PulseScrollView } from '../components/PulseScrollView';
 import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
 import { useForms } from '../context/FormsContext';
+import { useGradesTasks } from '../context/GradesTasksContext';
+import { usePulseAlert } from '../context/AlertModalContext';
 import FormIcon from '../components/FormIcons';
 import Svg, { Path } from 'react-native-svg';
 import { useQuizzesStyles } from './useQuizzesStyles';
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
+import TrashIcon from '../../assets/images/trash.svg';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -111,7 +114,39 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
     </Svg>
   );
 
-  const { forms } = useForms();
+  const { forms, deleteForm } = useForms();
+  const { removeTasksForForm } = useGradesTasks();
+  const { showAlert, showSuccess, showError } = usePulseAlert();
+
+  const confirmDeleteForm = useCallback(
+    (formId: string, title: string) => {
+      showAlert({
+        title: 'Delete this task?',
+        message:
+          'This permanently removes the task and any linked entries in class gradebooks (from Share task). This cannot be undone.',
+        variant: 'warning',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              void (async () => {
+                try {
+                  await deleteForm(formId);
+                  await removeTasksForForm(formId);
+                  showSuccess('Task deleted', `"${title}" has been removed.`);
+                } catch {
+                  showError('Could not delete', 'Please try again.');
+                }
+              })();
+            },
+          },
+        ],
+      });
+    },
+    [deleteForm, removeTasksForForm, showAlert, showError, showSuccess],
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | AssessmentKind>('all');
 
@@ -351,12 +386,34 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
                   onPress={openDetail}
                   android_ripple={{ color: ink.pressTint }}
                 >
-                  <View style={[styles.itemIconWell, { backgroundColor: meta.soft }]}>
-                    {form ? (
-                      <FormIcon iconId={form.iconId} size={26} color={meta.accent} />
-                    ) : (
-                      <QuizIcon size={26} color={meta.accent} />
-                    )}
+                  <View style={styles.itemIconColumn}>
+                    <View style={[styles.itemIconWell, { backgroundColor: meta.soft }]}>
+                      {form ? (
+                        <FormIcon iconId={form.iconId} size={26} color={meta.accent} />
+                      ) : (
+                        <QuizIcon size={26} color={meta.accent} />
+                      )}
+                    </View>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.iconBtn,
+                        form ? styles.iconBtnDanger : styles.iconBtnDisabled,
+                        pressed && form && styles.iconBtnPressed,
+                      ]}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        if (form) confirmDeleteForm(form.id, form.name);
+                      }}
+                      disabled={!form}
+                      hitSlop={8}
+                      accessibilityLabel="Delete task"
+                    >
+                      <TrashIcon
+                        width={18}
+                        height={18}
+                        stroke={form ? '#DC2626' : ink.inkSoft}
+                      />
+                    </Pressable>
                   </View>
                   <View style={styles.itemMain}>
                     <View style={styles.itemTitleRow}>
@@ -390,7 +447,7 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
                     <Text style={styles.progressLab}>{pct}% submission rate</Text>
                   </View>
                   <View style={styles.itemSide}>
-                    <View style={styles.sideActions}>
+                    <View style={styles.sideActionsRow}>
                       <Pressable
                         style={({ pressed }) => [
                           styles.iconBtn,
@@ -415,7 +472,7 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
                         ]}
                         onPress={(e) => {
                           e.stopPropagation();
-                          if (form) navigation.navigate('ShareForm', { formId: quiz.id });
+                          if (form) navigation.navigate('ShareTask', { formId: quiz.id });
                         }}
                         disabled={!form}
                         hitSlop={8}
@@ -424,7 +481,9 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
                         <ShareIcon width={18} height={18} stroke={form ? ink.ink : ink.inkSoft} />
                       </Pressable>
                     </View>
-                    <ChevronRightIcon size={20} color={ink.inkSoft} />
+                    <View style={styles.itemSideChevron}>
+                      <ChevronRightIcon size={24} color={ink.inkSoft} />
+                    </View>
                   </View>
                 </Pressable>
               );

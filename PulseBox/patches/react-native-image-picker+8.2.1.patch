@@ -1,0 +1,53 @@
+diff --git a/node_modules/react-native-image-picker/src/platforms/native.ts b/node_modules/react-native-image-picker/src/platforms/native.ts
+index 0885cdf..c558c3f 100644
+--- a/node_modules/react-native-image-picker/src/platforms/native.ts
++++ b/node_modules/react-native-image-picker/src/platforms/native.ts
+@@ -27,15 +27,31 @@ const DEFAULT_OPTIONS: ImageLibraryOptions & CameraOptions = {
+ // @ts-ignore We want to check whether __turboModuleProxy exitst, it may not
+ const isTurboModuleEnabled = global.__turboModuleProxy != null;
+ 
+-const nativeImagePicker = isTurboModuleEnabled
++/** TurboModule lookup can be null on New Architecture; fall back to the bridge module. */
++const turboImagePicker = isTurboModuleEnabled
+   ? require('./NativeImagePicker').default
+-  : NativeModules.ImagePicker;
++  : null;
++
++const nativeImagePicker = turboImagePicker ?? NativeModules.ImagePicker;
++
++function nativeModuleMissing(): ImagePickerResponse {
++  return {
++    errorCode: 'others',
++    errorMessage:
++      'ImagePicker is not available. Try a full rebuild (clean Gradle), and turn off legacy Remote JS Debugging.',
++  };
++}
+ 
+ export function camera(
+   options: CameraOptions,
+   callback?: Callback,
+ ): Promise<ImagePickerResponse> {
+-  return new Promise((resolve) => {
++  if (!nativeImagePicker?.launchCamera) {
++    const err = nativeModuleMissing();
++    if (callback) callback(err);
++    return Promise.resolve(err);
++  }
++  return new Promise(resolve => {
+     nativeImagePicker.launchCamera(
+       {...DEFAULT_OPTIONS, ...options},
+       (result: ImagePickerResponse) => {
+@@ -50,7 +66,12 @@ export function imageLibrary(
+   options: ImageLibraryOptions,
+   callback?: Callback,
+ ): Promise<ImagePickerResponse> {
+-  return new Promise((resolve) => {
++  if (!nativeImagePicker?.launchImageLibrary) {
++    const err = nativeModuleMissing();
++    if (callback) callback(err);
++    return Promise.resolve(err);
++  }
++  return new Promise(resolve => {
+     nativeImagePicker.launchImageLibrary(
+       {...DEFAULT_OPTIONS, ...options},
+       (result: ImagePickerResponse) => {

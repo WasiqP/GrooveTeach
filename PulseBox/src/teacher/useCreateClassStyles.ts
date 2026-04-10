@@ -171,29 +171,36 @@ export function useCreateClassStyles() {
     fontFamily: F.dmRegular,
     color: ink.inkSoft,
   },
-  roomCard: {
-    borderWidth: ink.borderWidth,
-    borderColor: ink.borderInk,
-    borderRadius: radius.card,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    backgroundColor: ink.canvas,
+  scheduleBlock: {
+    marginBottom: 22,
   },
-  roomCardHint: {
-    fontSize: 12,
-    fontFamily: F.dmSemi,
-    color: ink.inkSoft,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 10,
+  scheduleBlockHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  roomInputInner: {
-    fontSize: 17,
-    fontFamily: F.dmMedium,
+  scheduleBlockTitle: {
+    fontSize: 15,
+    fontFamily: F.dmBold,
     color: ink.ink,
-    paddingVertical: 0,
-    margin: 0,
-    minHeight: 24,
+  },
+  scheduleBlockRemove: {
+    fontSize: 15,
+    fontFamily: F.dmSemi,
+    color: '#DC2626',
+  },
+  addMeetingBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  addMeetingBtnTxt: {
+    fontSize: 16,
+    fontFamily: F.dmBold,
+    color: theme.primary,
   },
   modalBackdrop: {
     flex: 1,
@@ -268,6 +275,11 @@ export function useCreateClassStyles() {
   },
   addInput: {
     marginBottom: 0,
+  },
+  addInputNarrow: {
+    marginBottom: 0,
+    maxWidth: 140,
+    alignSelf: 'stretch',
   },
   addCircle: {
     alignSelf: 'flex-end',

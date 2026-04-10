@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ interface Student {
   id: string;
   name: string;
   email?: string;
+  rollNumber?: string;
 }
 
 const SCHOOL_TYPES: SchoolTypeOption[] = ['School', 'College', 'University', 'Others'];
@@ -69,6 +70,65 @@ function formatScheduleFromSelection(dayIds: number[], start: Date, end: Date): 
   const dayPart = sorted.map((id) => DAY_ID_TO_LABEL[id] ?? '').filter(Boolean).join(', ');
   const range = `${formatTime(start)} – ${formatTime(end)}`;
   return dayPart ? `${dayPart} · ${range}` : range;
+}
+
+/** K–12 only when School type is selected */
+const GRADE_LEVELS_SCHOOL: string[] = [
+  'Kindergarten',
+  'Grade 1',
+  'Grade 2',
+  'Grade 3',
+  'Grade 4',
+  'Grade 5',
+  'Grade 6',
+  'Grade 7',
+  'Grade 8',
+  'Grade 9',
+  'Grade 10',
+  'Grade 11',
+  'Grade 12',
+];
+
+const GRADE_LEVELS_COLLEGE: string[] = [
+  '1st year',
+  '2nd year',
+  '3rd year',
+  '4th year',
+  'Graduate / PG',
+  'Certificate / Diploma',
+];
+
+const GRADE_LEVELS_UNIVERSITY: string[] = [
+  'UG — Year 1',
+  'Year 2',
+  'Year 3',
+  'Year 4 / Honours',
+  "Master's",
+  'Doctoral',
+  'Postdoctoral',
+];
+
+const GRADE_LEVELS_OTHERS: string[] = [
+  'General',
+  'Mixed levels',
+  'Adult / continuing education',
+  'Professional',
+  'Not specified',
+];
+
+type ScheduleBlock = {
+  id: string;
+  dayIds: number[];
+  start: Date;
+  end: Date;
+};
+
+function newScheduleBlock(id: string): ScheduleBlock {
+  const start = new Date();
+  start.setHours(9, 0, 0, 0);
+  const end = new Date();
+  end.setHours(10, 0, 0, 0);
+  return { id, dayIds: [], start, end };
 }
 
 function timeToMinutes(d: Date): number {
@@ -127,62 +187,81 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
   const [className, setClassName] = useState('');
   const [subject, setSubject] = useState('');
   const [gradeLevel, setGradeLevel] = useState('');
-  const [roomNumber, setRoomNumber] = useState('');
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [startTime, setStartTime] = useState(() => {
-    const d = new Date();
-    d.setHours(9, 0, 0, 0);
-    return d;
-  });
-  const [endTime, setEndTime] = useState(() => {
-    const d = new Date();
-    d.setHours(10, 0, 0, 0);
-    return d;
-  });
-  /** Which time field the picker is editing */
-  const [activeTimeField, setActiveTimeField] = useState<'start' | 'end'>('start');
+  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>(() => [newScheduleBlock('block-0')]);
+  /** Which block + start/end the time picker is editing */
+  const [editingTime, setEditingTime] = useState<{ blockId: string; field: 'start' | 'end' } | null>(null);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [androidTimeOpen, setAndroidTimeOpen] = useState(false);
 
   const [students, setStudents] = useState<Student[]>([]);
   const [studentName, setStudentName] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
+  const [studentRoll, setStudentRoll] = useState('');
   const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [csvPaste, setCsvPaste] = useState('');
 
-  const gradeLevels = useMemo(
-    () => [
-      'Kindergarten',
-      'Grade 1',
-      'Grade 2',
-      'Grade 3',
-      'Grade 4',
-      'Grade 5',
-      'Grade 6',
-      'Grade 7',
-      'Grade 8',
-      'Grade 9',
-      'Grade 10',
-      'Grade 11',
-      'Grade 12',
-    ],
-    [],
-  );
-
-  const startTimeLabel = useMemo(() => formatTime(startTime), [startTime]);
-  const endTimeLabel = useMemo(() => formatTime(endTime), [endTime]);
-
-  const pickerValue = activeTimeField === 'start' ? startTime : endTime;
-  const setPickerTime = (d: Date) => {
-    if (activeTimeField === 'start') {
-      setStartTime(d);
-    } else {
-      setEndTime(d);
+  const gradeLevelOptions = useMemo((): string[] => {
+    switch (schoolType) {
+      case 'School':
+        return GRADE_LEVELS_SCHOOL;
+      case 'College':
+        return GRADE_LEVELS_COLLEGE;
+      case 'University':
+        return GRADE_LEVELS_UNIVERSITY;
+      case 'Others':
+        return GRADE_LEVELS_OTHERS;
+      default:
+        return GRADE_LEVELS_SCHOOL;
     }
+  }, [schoolType]);
+
+  useEffect(() => {
+    setGradeLevel('');
+  }, [schoolType]);
+
+  const activeBlockForPicker = editingTime
+    ? scheduleBlocks.find((b) => b.id === editingTime.blockId)
+    : undefined;
+  const pickerValue =
+    activeBlockForPicker && editingTime
+      ? editingTime.field === 'start'
+        ? activeBlockForPicker.start
+        : activeBlockForPicker.end
+      : (() => {
+          const d = new Date();
+          d.setHours(9, 0, 0, 0);
+          return d;
+        })();
+
+  const setPickerTime = (d: Date) => {
+    if (!editingTime) return;
+    setScheduleBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id !== editingTime.blockId) return b;
+        return editingTime.field === 'start' ? { ...b, start: d } : { ...b, end: d };
+      }),
+    );
   };
 
-  const toggleDay = (id: number) => {
-    setSelectedDays((prev) => (prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]));
+  /** At most one day per meeting block; tap the same day again to clear. */
+  const toggleDayInBlock = (blockId: string, dayId: number) => {
+    setScheduleBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id !== blockId) return b;
+        if (b.dayIds.length === 1 && b.dayIds[0] === dayId) {
+          return { ...b, dayIds: [] };
+        }
+        return { ...b, dayIds: [dayId] };
+      }),
+    );
+  };
+
+  const addScheduleBlock = () => {
+    setScheduleBlocks((prev) => [...prev, newScheduleBlock(`block-${Date.now()}`)]);
+  };
+
+  const removeScheduleBlock = (blockId: string) => {
+    setScheduleBlocks((prev) => (prev.length <= 1 ? prev : prev.filter((b) => b.id !== blockId)));
   };
 
   const handleAddStudent = () => {
@@ -194,14 +273,17 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
       });
       return;
     }
+    const roll = studentRoll.trim();
     const newStudent: Student = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       name: studentName.trim(),
       email: studentEmail.trim() || undefined,
+      rollNumber: roll || undefined,
     };
     setStudents((s) => [...s, newStudent]);
     setStudentName('');
     setStudentEmail('');
+    setStudentRoll('');
   };
 
   const handleRemoveStudent = (studentId: string) => {
@@ -222,6 +304,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
       id: `csv-${Date.now()}-${i}`,
       name: r.name,
       email: r.email,
+      rollNumber: r.rollNumber,
     }));
     setStudents((s) => [...s, ...added]);
     setCsvPaste('');
@@ -238,11 +321,12 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
     if (event.type === 'set' && date) {
       setPickerTime(date);
     }
+    setEditingTime(null);
   };
 
-  const openTimePicker = (field: 'start' | 'end') => {
+  const openTimePicker = (blockId: string, field: 'start' | 'end') => {
     Keyboard.dismiss();
-    setActiveTimeField(field);
+    setEditingTime({ blockId, field });
     if (Platform.OS === 'android') {
       setAndroidTimeOpen(true);
     } else {
@@ -259,13 +343,30 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
       });
       return;
     }
-    if (selectedDays.length === 0) {
-      showAlert({
-        variant: 'warning',
-        title: 'Schedule',
-        message: 'Select at least one day your class meets.',
-      });
-      return;
+    for (let i = 0; i < scheduleBlocks.length; i++) {
+      const b = scheduleBlocks[i];
+      if (b.dayIds.length === 0) {
+        showAlert({
+          variant: 'warning',
+          title: 'Schedule',
+          message:
+            scheduleBlocks.length > 1
+              ? `Meeting time ${i + 1}: select at least one day, or remove that block.`
+              : 'Select at least one day your class meets.',
+        });
+        return;
+      }
+      if (timeToMinutes(b.end) <= timeToMinutes(b.start)) {
+        showAlert({
+          variant: 'warning',
+          title: 'End time',
+          message:
+            scheduleBlocks.length > 1
+              ? `Meeting time ${i + 1}: end time must be after start time.`
+              : 'End time must be after start time.',
+        });
+        return;
+      }
     }
     if (students.length === 0) {
       showAlert({
@@ -275,21 +376,15 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
       });
       return;
     }
-    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
-      showAlert({
-        variant: 'warning',
-        title: 'End time',
-        message: 'End time must be after start time.',
-      });
-      return;
-    }
-
-    const scheduleStr = formatScheduleFromSelection(selectedDays, startTime, endTime);
+    const scheduleStr = scheduleBlocks
+      .map((b) => formatScheduleFromSelection(b.dayIds, b.start, b.end))
+      .join(' | ');
 
     const roster: ClassStudentRecord[] = students.map((s) => ({
       id: s.id,
       name: s.name,
       email: s.email,
+      rollNumber: s.rollNumber,
     }));
 
     const newClass: ClassData = {
@@ -299,7 +394,6 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
       gradeLevel,
       studentCount: students.length,
       schedule: scheduleStr,
-      roomNumber: roomNumber.trim() || undefined,
       schoolName: schoolName.trim(),
       schoolType,
       students: roster,
@@ -366,6 +460,29 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
               ))}
             </ScrollView>
           </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>
+              {schoolType === 'School' ? 'Grade level (K–12) *' : 'Level / year *'}
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.gradeScrollContent}
+            >
+              {gradeLevelOptions.map((grade) => (
+                <Pressable
+                  key={grade}
+                  style={[styles.gradeChip, gradeLevel === grade && styles.gradeChipOn]}
+                  onPress={() => setGradeLevel(grade)}
+                  android_ripple={{ color: theme.rippleLight }}
+                >
+                  <Text style={[styles.gradeChipTxt, gradeLevel === grade && styles.gradeChipTxtOn]}>
+                    {grade}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -390,75 +507,80 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
               onChangeText={setSubject}
             />
           </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Grade level *</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.gradeScrollContent}
-            >
-              {gradeLevels.map((grade) => (
-                <Pressable
-                  key={grade}
-                  style={[styles.gradeChip, gradeLevel === grade && styles.gradeChipOn]}
-                  onPress={() => setGradeLevel(grade)}
-                  android_ripple={{ color: theme.rippleLight }}
-                >
-                  <Text style={[styles.gradeChipTxt, gradeLevel === grade && styles.gradeChipTxtOn]}>
-                    {grade}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionEyebrow}>Schedule</Text>
           <Text style={styles.sectionLead}>
-            Choose the days this class meets, then set start and end times.
+            Add one or more meeting times. Pick a single day per block, then set the hours. Use
+            &quot;Add another meeting time&quot; for more days (e.g. Mon 9–10 AM and Thu 2–3 PM).
           </Text>
 
-          <Text style={styles.label}>Days *</Text>
-          <View style={styles.dayGrid}>
-            {WEEK_CHIPS.map(({ id, label }) => {
-              const on = selectedDays.includes(id);
-              return (
-                <Pressable
-                  key={id}
-                  style={[styles.dayChip, on && styles.dayChipOn]}
-                  onPress={() => toggleDay(id)}
-                  android_ripple={{ color: theme.rippleLight }}
-                >
-                  <Text style={[styles.dayChipTxt, on && styles.dayChipTxtOn]}>{label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          {scheduleBlocks.map((block, blockIndex) => (
+            <View key={block.id} style={styles.scheduleBlock}>
+              {scheduleBlocks.length > 1 ? (
+                <View style={styles.scheduleBlockHeader}>
+                  <Text style={styles.scheduleBlockTitle}>Meeting time {blockIndex + 1}</Text>
+                  <Pressable
+                    onPress={() => removeScheduleBlock(block.id)}
+                    hitSlop={8}
+                    android_ripple={{ color: ink.pressTint }}
+                  >
+                    <Text style={styles.scheduleBlockRemove}>Remove</Text>
+                  </Pressable>
+                </View>
+              ) : null}
 
-          <Text style={[styles.label, styles.labelSpaced]}>Start time *</Text>
+              <Text style={styles.label}>Days *</Text>
+              <View style={styles.dayGrid}>
+                {WEEK_CHIPS.map(({ id, label }) => {
+                  const on = block.dayIds.includes(id);
+                  return (
+                    <Pressable
+                      key={id}
+                      style={[styles.dayChip, on && styles.dayChipOn]}
+                      onPress={() => toggleDayInBlock(block.id, id)}
+                      android_ripple={{ color: theme.rippleLight }}
+                    >
+                      <Text style={[styles.dayChipTxt, on && styles.dayChipTxtOn]}>{label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Text style={[styles.label, styles.labelSpaced]}>Start time *</Text>
+              <Pressable
+                style={styles.timeTrigger}
+                onPress={() => openTimePicker(block.id, 'start')}
+                android_ripple={{ color: ink.pressTint }}
+              >
+                <Text style={styles.timeTriggerLabel}>Start</Text>
+                <Text style={styles.timeTriggerValue}>{formatTime(block.start)}</Text>
+                <Text style={styles.timeTriggerHint}>Tap to change</Text>
+              </Pressable>
+
+              <Text style={[styles.label, styles.labelSpaced]}>End time *</Text>
+              <Pressable
+                style={styles.timeTrigger}
+                onPress={() => openTimePicker(block.id, 'end')}
+                android_ripple={{ color: ink.pressTint }}
+              >
+                <Text style={styles.timeTriggerLabel}>End</Text>
+                <Text style={styles.timeTriggerValue}>{formatTime(block.end)}</Text>
+                <Text style={styles.timeTriggerHint}>Tap to change</Text>
+              </Pressable>
+            </View>
+          ))}
+
           <Pressable
-            style={styles.timeTrigger}
-            onPress={() => openTimePicker('start')}
+            style={styles.addMeetingBtn}
+            onPress={addScheduleBlock}
             android_ripple={{ color: ink.pressTint }}
           >
-            <Text style={styles.timeTriggerLabel}>Start</Text>
-            <Text style={styles.timeTriggerValue}>{startTimeLabel}</Text>
-            <Text style={styles.timeTriggerHint}>Tap to change</Text>
+            <Text style={styles.addMeetingBtnTxt}>+ Add another meeting time</Text>
           </Pressable>
 
-          <Text style={[styles.label, styles.labelSpaced]}>End time *</Text>
-          <Pressable
-            style={styles.timeTrigger}
-            onPress={() => openTimePicker('end')}
-            android_ripple={{ color: ink.pressTint }}
-          >
-            <Text style={styles.timeTriggerLabel}>End</Text>
-            <Text style={styles.timeTriggerValue}>{endTimeLabel}</Text>
-            <Text style={styles.timeTriggerHint}>Tap to change</Text>
-          </Pressable>
-
-          {Platform.OS === 'android' && androidTimeOpen && (
+          {Platform.OS === 'android' && androidTimeOpen && editingTime && (
             <DateTimePicker
               value={pickerValue}
               mode="time"
@@ -469,12 +591,17 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
 
           {Platform.OS === 'ios' && (
             <Modal visible={showTimeModal} transparent animationType="fade">
-              <TouchableWithoutFeedback onPress={() => setShowTimeModal(false)}>
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  setShowTimeModal(false);
+                  setEditingTime(null);
+                }}
+              >
                 <View style={styles.modalBackdrop}>
                   <TouchableWithoutFeedback>
                     <View style={styles.timeSheet}>
                       <Text style={styles.timeSheetTitle}>
-                        {activeTimeField === 'start' ? 'Start time' : 'End time'}
+                        {editingTime?.field === 'end' ? 'End time' : 'Start time'}
                       </Text>
                       <DateTimePicker
                         value={pickerValue}
@@ -486,7 +613,10 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
                       />
                       <Pressable
                         style={styles.timeSheetDone}
-                        onPress={() => setShowTimeModal(false)}
+                        onPress={() => {
+                          setShowTimeModal(false);
+                          setEditingTime(null);
+                        }}
                         android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
                       >
                         <Text style={styles.timeSheetDoneTxt}>Done</Text>
@@ -497,24 +627,6 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
               </TouchableWithoutFeedback>
             </Modal>
           )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>Location</Text>
-          <View style={styles.field}>
-            <Text style={styles.label}>Room (optional)</Text>
-            <View style={styles.roomCard}>
-              <Text style={styles.roomCardHint}>Where this class meets</Text>
-              <TextInput
-                style={styles.roomInputInner}
-                placeholder="e.g. Room 205, Building B"
-                placeholderTextColor={ink.placeholder}
-                value={roomNumber}
-                onChangeText={setRoomNumber}
-                underlineColorAndroid="transparent"
-              />
-            </View>
-          </View>
         </View>
 
         <View style={styles.studentsSection}>
@@ -541,6 +653,14 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
               placeholderTextColor={ink.placeholder}
               value={studentName}
               onChangeText={setStudentName}
+            />
+            <TextInput
+              style={[styles.input, styles.addInputNarrow]}
+              placeholder="Roll (opt.)"
+              placeholderTextColor={ink.placeholder}
+              value={studentRoll}
+              onChangeText={setStudentRoll}
+              maxLength={16}
             />
             <TextInput
               style={[styles.input, styles.addInput]}
@@ -571,6 +691,7 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
                     </View>
                     <View style={styles.studentTxt}>
                       <Text style={styles.studentName} numberOfLines={1}>
+                        {student.rollNumber ? `#${student.rollNumber} ` : ''}
                         {student.name}
                       </Text>
                       {student.email ? (

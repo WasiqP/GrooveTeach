@@ -1,0 +1,23 @@
+diff --git a/node_modules/@notifee/react-native/dist/NotifeeNativeModule.js b/node_modules/@notifee/react-native/dist/NotifeeNativeModule.js
+index 9fd03bf..c4bcb47 100644
+--- a/node_modules/@notifee/react-native/dist/NotifeeNativeModule.js
++++ b/node_modules/@notifee/react-native/dist/NotifeeNativeModule.js
+@@ -15,9 +15,15 @@ class NotifeeNativeModule {
+     constructor(config) {
+         this._nativeModule = null;
+         this._moduleConfig = Object.assign({}, config);
+-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+-        // @ts-ignore - change here needs resolution https://github.com/DefinitelyTyped/DefinitelyTyped/pull/49560/files
+-        this._nativeEmitter = new react_native_1.NativeEventEmitter(this.native);
++        const nm = react_native_1.NativeModules[this._moduleConfig.nativeModuleName];
++        this._nativeEmitter = nm
++            ? new react_native_1.NativeEventEmitter(nm)
++            : {
++                addListener: function () {
++                    return { remove: function () {} };
++                },
++                removeAllListeners: function () {},
++            };
+         for (let i = 0; i < config.nativeEvents.length; i++) {
+             const eventName = config.nativeEvents[i];
+             this._nativeEmitter.addListener(eventName, (payload) => {

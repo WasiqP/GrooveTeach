@@ -439,7 +439,7 @@ const EditForm: React.FC<Props> = ({ route, navigation }) => {
           </View>
           <Pressable
             style={styles.shareChip}
-            onPress={() => navigation.navigate('ShareForm', { formId })}
+            onPress={() => navigation.navigate('ShareTask', { formId })}
             android_ripple={{ color: theme.rippleLight, borderless: true }}
             accessibilityLabel="Share task"
           >

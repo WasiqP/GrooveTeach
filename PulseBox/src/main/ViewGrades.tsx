@@ -33,6 +33,8 @@ import { useViewGradesStyles } from './useViewGradesStyles';
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
   embedded?: boolean;
+  /** When embedded in TeacherTabShell, true while the View Grades tab is visible (drives filter panel reset). */
+  active?: boolean;
 };
 
 const KIND_LABEL: Record<TaskKind, string> = {
@@ -126,7 +128,7 @@ function gradeColor(status: TaskGradeRecord['status'], primary: string): string 
   }
 }
 
-const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
+const ViewGrades: React.FC<Props> = ({ navigation, embedded, active }) => {
   const { styles, ink, theme } = useViewGradesStyles();
   const { classes } = useClasses();
   const { tasks, isLoading, getGrade } = useGradesTasks();
@@ -138,15 +140,22 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {
   const [studentSearch, setStudentSearch] = useState('');
   const [taskPickerVisible, setTaskPickerVisible] = useState(false);
   const [taskModalSearch, setTaskModalSearch] = useState('');
-  const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
-  /** Collapse filter chips when leaving this screen (tab change or stack navigation). */
+  /** Embedded tabs stay mounted; stack focus does not change on tab switch — use `active` from TeacherTabShell. */
+  useEffect(() => {
+    if (embedded && active) {
+      setFiltersExpanded(false);
+    }
+  }, [embedded, active]);
+
+  /** Standalone route: collapse filters each time this screen is focused. */
   useFocusEffect(
     useCallback(() => {
-      return () => {
+      if (!embedded) {
         setFiltersExpanded(false);
-      };
-    }, []),
+      }
+    }, [embedded]),
   );
 
   const classById = useMemo(() => {

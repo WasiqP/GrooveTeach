@@ -16,6 +16,7 @@ import {
 import { useGradesTasks, type TaskKind } from '../context/GradesTasksContext';
 import { usePulseAlert } from '../context/AlertModalContext';
 import ClassDetailsAttendanceReport from '../components/ClassDetailsAttendanceReport';
+import ClassReminderSection from '../components/ClassReminderSection';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ClassDetails'>;
 
@@ -293,6 +294,8 @@ const ClassDetails: React.FC<Props> = ({ route, navigation }) => {
           {classData.roomNumber && (
             <Text style={styles.roomText}>{classData.roomNumber}</Text>
           )}
+
+          <ClassReminderSection classData={classData} updateClass={updateClass} />
         </View>
 
         {/* Quick Actions */}

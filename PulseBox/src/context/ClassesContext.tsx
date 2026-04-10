@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { ClassReminderSettings } from '../types/classReminder';
+import { cancelClassReminderTriggers } from '../services/classReminderNotifications';
 
 /** Institution category collected when creating a class */
 export type SchoolTypeOption = 'School' | 'College' | 'University' | 'Others';
@@ -8,7 +10,14 @@ export type SchoolTypeOption = 'School' | 'College' | 'University' | 'Others';
 export interface ClassStudentRecord {
   id: string;
   name: string;
+  /** Teacher-assigned roll / class number (shown with name in roster views). */
+  rollNumber?: string;
   email?: string;
+  /** Private teacher note on the student record (not shown to the student in-app). */
+  teacherRemark?: string;
+  teacherRemarkUpdatedAt?: string;
+  /** Mark for follow-up / at-risk tracking in the teacher UI. */
+  followUp?: boolean;
 }
 
 export interface ClassAnnouncement {
@@ -63,6 +72,8 @@ export interface ClassData {
   activityLog?: ClassActivityItem[];
   /** One record per dateKey when attendance is saved; latest save wins for that day. */
   attendanceHistory?: AttendanceDayRecord[];
+  /** Weekly local notification reminder (Notifee). */
+  reminder?: ClassReminderSettings;
   createdAt: string;
 }
 
@@ -185,6 +196,11 @@ export const ClassesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteClass = async (id: string) => {
     try {
+      try {
+        await cancelClassReminderTriggers(id);
+      } catch (e) {
+        if (__DEV__) console.warn('cancelClassReminderTriggers', e);
+      }
       const updatedClasses = classes.filter(cls => cls.id !== id);
       setClasses(updatedClasses);
       await AsyncStorage.setItem('classes', JSON.stringify(updatedClasses));

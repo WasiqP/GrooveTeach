@@ -187,13 +187,17 @@ export function useQuizzesStyles() {
   itemCardPressed: {
     opacity: 0.97,
   },
+  itemIconColumn: {
+    alignItems: 'center',
+    marginRight: 12,
+    gap: 8,
+  },
   itemIconWell: {
     width: 52,
     height: 52,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   itemMain: {
     flex: 1,
@@ -263,12 +267,17 @@ export function useQuizzesStyles() {
   },
   itemSide: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
     marginLeft: 8,
+    gap: 6,
   },
-  sideActions: {
+  sideActionsRow: {
     flexDirection: 'row',
     gap: 6,
     marginBottom: 8,
+  },
+  itemSideChevron: {
+    marginTop: 6,
   },
   iconBtn: {
     width: 36,
@@ -285,6 +294,9 @@ export function useQuizzesStyles() {
   },
   iconBtnDisabled: {
     opacity: 0.45,
+  },
+  iconBtnDanger: {
+    borderColor: 'rgba(220, 38, 38, 0.42)',
   },
   emptyCard: {
     marginHorizontal: 20,

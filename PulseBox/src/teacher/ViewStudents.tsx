@@ -7,12 +7,18 @@ import {
   Pressable,
   Modal,
   KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { useClasses, type ClassStudentRecord } from '../context/ClassesContext';
 import { parseStudentCsvRows } from '../utils/parseStudentCsv';
+import {
+  formatBulkRollIndex,
+  validateBulkRollAssignments,
+  type BulkRollPattern,
+} from '../utils/bulkRollNumberFormat';
 import { usePulseAlert } from '../context/AlertModalContext';
 import { PulseScrollView } from '../components/PulseScrollView';
 import { useViewStudentsStyles } from './useViewStudentsStyles';
@@ -88,6 +94,13 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
   const [csvPaste, setCsvPaste] = useState('');
   const [addName, setAddName] = useState('');
   const [addEmail, setAddEmail] = useState('');
+  const [assignEveryoneOpen, setAssignEveryoneOpen] = useState(false);
+  const [bulkOrder, setBulkOrder] = useState<'roster' | 'name'>('roster');
+  const [assignPrefix, setAssignPrefix] = useState('');
+  const [assignSuffix, setAssignSuffix] = useState('');
+  const [assignStart, setAssignStart] = useState('1');
+  const [assignStep, setAssignStep] = useState('1');
+  const [assignPad, setAssignPad] = useState('0');
 
   const classData = useMemo(() => classes.find((c) => c.id === classId), [classes, classId]);
   const roster: ClassStudentRecord[] = classData?.students ?? [];
@@ -135,13 +148,159 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
-  const persistRoster = (next: ClassStudentRecord[]) => {
-    if (!classData) return;
-    void updateClass(classData.id, {
-      students: next,
-      studentCount: next.length,
+  const persistRoster = useCallback(
+    (next: ClassStudentRecord[]) => {
+      if (!classData) return;
+      void updateClass(classData.id, {
+        students: next,
+        studentCount: next.length,
+      });
+    },
+    [classData, updateClass],
+  );
+
+  const openAssignEveryone = useCallback(() => {
+    setBulkOrder('roster');
+    setAssignPrefix('');
+    setAssignSuffix('');
+    setAssignStart('1');
+    setAssignStep('1');
+    setAssignPad('0');
+    setAssignEveryoneOpen(true);
+  }, []);
+
+  const rosterOrderedForBulk = useMemo(() => {
+    if (bulkOrder === 'name') {
+      return [...roster].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return [...roster];
+  }, [roster, bulkOrder]);
+
+  const bulkAssignPreview = useMemo(() => {
+    const start = parseInt(assignStart.trim(), 10);
+    const step = parseInt(assignStep.trim(), 10);
+    const pad = parseInt(assignPad.trim(), 10);
+    if (
+      Number.isNaN(start) ||
+      Number.isNaN(step) ||
+      step === 0 ||
+      Number.isNaN(pad) ||
+      pad < 0
+    ) {
+      return null;
+    }
+    const pattern: BulkRollPattern = {
+      prefix: assignPrefix,
+      suffix: assignSuffix,
+      start,
+      step,
+      padLength: pad,
+    };
+    const n = Math.min(3, rosterOrderedForBulk.length);
+    if (n === 0) return null;
+    const samples = [];
+    for (let i = 0; i < n; i++) {
+      samples.push(formatBulkRollIndex(pattern, i));
+    }
+    return { samples, total: rosterOrderedForBulk.length };
+  }, [
+    rosterOrderedForBulk,
+    assignPrefix,
+    assignSuffix,
+    assignStart,
+    assignStep,
+    assignPad,
+  ]);
+
+  const runBulkAssign = useCallback(() => {
+    if (roster.length === 0) return;
+    const start = parseInt(assignStart.trim(), 10);
+    const step = parseInt(assignStep.trim(), 10);
+    const pad = parseInt(assignPad.trim(), 10);
+    const pattern: BulkRollPattern = {
+      prefix: assignPrefix.trim(),
+      suffix: assignSuffix.trim(),
+      start,
+      step,
+      padLength: pad,
+    };
+    const ordered =
+      bulkOrder === 'name'
+        ? [...roster].sort((a, b) => a.name.localeCompare(b.name))
+        : [...roster];
+    const validated = validateBulkRollAssignments(ordered.length, pattern);
+    if (!validated.ok) {
+      showError('Check your format', validated.message);
+      return;
+    }
+    const rollById = new Map<string, string>();
+    ordered.forEach((s, i) => rollById.set(s.id, validated.rolls[i]!));
+    const next = roster.map((s) => ({
+      ...s,
+      rollNumber: rollById.get(s.id),
+    }));
+    persistRoster(next);
+    setAssignEveryoneOpen(false);
+    showSuccess(
+      'Roll numbers assigned',
+      `Updated ${ordered.length} student${ordered.length === 1 ? '' : 's'}.`,
+    );
+  }, [
+    roster,
+    bulkOrder,
+    assignPrefix,
+    assignSuffix,
+    assignStart,
+    assignStep,
+    assignPad,
+    showError,
+    showSuccess,
+    persistRoster,
+  ]);
+
+  const confirmBulkAssign = useCallback(() => {
+    if (roster.length === 0) return;
+    const start = parseInt(assignStart.trim(), 10);
+    const step = parseInt(assignStep.trim(), 10);
+    const pad = parseInt(assignPad.trim(), 10);
+    const pattern: BulkRollPattern = {
+      prefix: assignPrefix.trim(),
+      suffix: assignSuffix.trim(),
+      start,
+      step,
+      padLength: pad,
+    };
+    const ordered =
+      bulkOrder === 'name'
+        ? [...roster].sort((a, b) => a.name.localeCompare(b.name))
+        : [...roster];
+    const validated = validateBulkRollAssignments(ordered.length, pattern);
+    if (!validated.ok) {
+      showError('Check your format', validated.message);
+      return;
+    }
+    showAlert({
+      variant: 'warning',
+      title: 'Assign roll numbers to everyone?',
+      message: `This replaces roll numbers for all ${ordered.length} students in this class. Students without a roll today will get one; existing rolls will be overwritten.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Assign everyone', style: 'default', onPress: () => runBulkAssign() },
+      ],
     });
-  };
+  }, [
+    roster.length,
+    roster,
+    bulkOrder,
+    assignPrefix,
+    assignSuffix,
+    assignStart,
+    assignStep,
+    assignPad,
+    showAlert,
+    showError,
+    runBulkAssign,
+  ]);
 
   const openAddMenu = () => {
     setAddMenuOpen(true);
@@ -352,12 +511,32 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
           <Text style={styles.addWideBtnTxt}>Add student</Text>
         </Pressable>
 
+        <Pressable
+          style={({ pressed }) => [
+            styles.assignEveryoneBtn,
+            roster.length === 0 && styles.assignEveryoneBtnDisabled,
+            pressed && roster.length > 0 && styles.assignEveryoneBtnPressed,
+          ]}
+          onPress={openAssignEveryone}
+          disabled={roster.length === 0}
+          android_ripple={{ color: ink.pressTint }}
+          accessibilityLabel="Assign roll numbers to all students"
+        >
+          <Text
+            style={[
+              styles.assignEveryoneBtnTxt,
+              roster.length === 0 && styles.toolBtnTxtDisabled,
+            ]}
+          >
+            Assign everyone
+          </Text>
+        </Pressable>
+
         {roster.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Build your roster</Text>
             <Text style={styles.emptyBody}>
-              Tap Add to enter one student or import a list from CSV. Names and emails are saved to
-              this class and used in grades and attendance.
+              {`Tap Add to enter one student or import a list from CSV. Names and emails are saved to this class and used in grades and attendance. After you have a roster, use Assign everyone to set roll numbers for the whole class, or open a student's record to edit one person.`}
             </Text>
           </View>
         ) : filteredRoster.length === 0 ? (
@@ -370,41 +549,57 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
             {filteredRoster.map((s, index) => {
               const selected = selectedIds.has(s.id);
               return (
-                <Pressable
+                <View
                   key={s.id}
                   style={[styles.row, index < filteredRoster.length - 1 && styles.rowDivider]}
-                  onPress={() => toggleSelect(s.id)}
-                  android_ripple={{ color: theme.rippleLight }}
                 >
-                  <View style={[styles.checkbox, selected && styles.checkboxOn]}>
-                    {selected ? (
-                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                        <Path
-                          d="M20 6L9 17L4 12"
-                          stroke={theme.white}
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </Svg>
-                    ) : null}
-                  </View>
-                  <View style={styles.avatar}>
-                    <UserIcon size={18} color={theme.white} />
-                  </View>
-                  <View style={styles.rowText}>
-                    <Text style={styles.name} numberOfLines={2}>
-                      {s.name}
-                    </Text>
-                    {s.email ? (
-                      <Text style={styles.email} numberOfLines={1}>
-                        {s.email}
+                  <Pressable
+                    onPress={() => toggleSelect(s.id)}
+                    hitSlop={8}
+                    android_ripple={{ color: theme.rippleLight }}
+                    accessibilityLabel={selected ? 'Deselect student' : 'Select student'}
+                  >
+                    <View style={[styles.checkbox, selected && styles.checkboxOn]}>
+                      {selected ? (
+                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                          <Path
+                            d="M20 6L9 17L4 12"
+                            stroke={theme.white}
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                  <Pressable
+                    style={styles.rowMainPress}
+                    onPress={() =>
+                      navigation.navigate('StudentRecords', { classId, studentId: s.id })
+                    }
+                    android_ripple={{ color: theme.rippleLight }}
+                    accessibilityLabel={`Open records for ${s.name}`}
+                  >
+                    <View style={styles.avatar}>
+                      <UserIcon size={18} color={theme.white} />
+                    </View>
+                    <View style={styles.rowText}>
+                      <Text style={styles.name} numberOfLines={2}>
+                        {s.rollNumber ? `#${s.rollNumber} ` : ''}
+                        {s.name}
                       </Text>
-                    ) : (
-                      <Text style={styles.emailMuted}>No email</Text>
-                    )}
-                  </View>
-                </Pressable>
+                      {s.email ? (
+                        <Text style={styles.email} numberOfLines={1}>
+                          {s.email}
+                        </Text>
+                      ) : (
+                        <Text style={styles.emailMuted}>No email</Text>
+                      )}
+                    </View>
+                    <Text style={styles.rowChevron}>›</Text>
+                  </Pressable>
+                </View>
               );
             })}
           </View>
@@ -490,6 +685,128 @@ const ViewStudents: React.FC<Props> = ({ route, navigation }) => {
                 <Text style={styles.modalSaveTxt}>Add</Text>
               </Pressable>
             </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={assignEveryoneOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAssignEveryoneOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalDimmer} onPress={() => setAssignEveryoneOpen(false)} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCenter}
+            pointerEvents="box-none"
+          >
+            <View style={styles.assignModalCard}>
+              <ScrollView
+                style={styles.assignScroll}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <Text style={styles.modalTitle}>Assign everyone</Text>
+                <Text style={styles.assignHint}>
+                  Set roll numbers for the whole class in one go. Default is simple numbering (1, 2, 3…)
+                  in roster order. Add a prefix or suffix, change start and step, or zero-pad digits.
+                </Text>
+
+                <Text style={styles.assignSectionLabel}>Order</Text>
+                <View style={styles.orderRow}>
+                  <Pressable
+                    style={[styles.orderChip, bulkOrder === 'roster' && styles.orderChipOn]}
+                    onPress={() => setBulkOrder('roster')}
+                    android_ripple={{ color: theme.rippleLight }}
+                  >
+                    <Text style={styles.orderChipTxt}>Roster (top → bottom)</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.orderChip, bulkOrder === 'name' && styles.orderChipOn]}
+                    onPress={() => setBulkOrder('name')}
+                    android_ripple={{ color: theme.rippleLight }}
+                  >
+                    <Text style={styles.orderChipTxt}>A–Z by name</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.inputLabel}>Prefix (optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. GR10- or A-"
+                  placeholderTextColor={ink.placeholder}
+                  value={assignPrefix}
+                  onChangeText={setAssignPrefix}
+                  maxLength={12}
+                />
+                <Text style={styles.inputLabel}>Suffix (optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. -B"
+                  placeholderTextColor={ink.placeholder}
+                  value={assignSuffix}
+                  onChangeText={setAssignSuffix}
+                  maxLength={12}
+                />
+                <Text style={styles.inputLabel}>Start at</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="1"
+                  placeholderTextColor={ink.placeholder}
+                  value={assignStart}
+                  onChangeText={setAssignStart}
+                  keyboardType="number-pad"
+                />
+                <Text style={styles.inputLabel}>Step</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="1"
+                  placeholderTextColor={ink.placeholder}
+                  value={assignStep}
+                  onChangeText={setAssignStep}
+                  keyboardType="number-pad"
+                />
+                <Text style={styles.inputLabel}>Zero-pad length</Text>
+                <Text style={[styles.modalHint, { marginBottom: 8 }]}>
+                  0 = no padding. 2 turns 1 into 01. Applies to the number part only.
+                </Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="0"
+                  placeholderTextColor={ink.placeholder}
+                  value={assignPad}
+                  onChangeText={setAssignPad}
+                  keyboardType="number-pad"
+                />
+
+                <View style={styles.assignPreview}>
+                  <Text style={styles.assignPreviewLabel}>Preview</Text>
+                  {bulkAssignPreview ? (
+                    <Text style={styles.assignPreviewTxt}>
+                      {bulkAssignPreview.samples.join(', ')}
+                      {bulkAssignPreview.total > bulkAssignPreview.samples.length
+                        ? `, … (${bulkAssignPreview.total} total)`
+                        : ''}
+                    </Text>
+                  ) : (
+                    <Text style={styles.assignPreviewMuted}>
+                      Enter valid start, step, and pad values to preview.
+                    </Text>
+                  )}
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <Pressable style={styles.modalCancel} onPress={() => setAssignEveryoneOpen(false)}>
+                  <Text style={styles.modalCancelTxt}>Cancel</Text>
+                </Pressable>
+                <Pressable style={styles.modalSave} onPress={confirmBulkAssign}>
+                  <Text style={styles.modalSaveTxt}>Apply</Text>
+                </Pressable>
+              </View>
             </View>
           </KeyboardAvoidingView>
         </View>

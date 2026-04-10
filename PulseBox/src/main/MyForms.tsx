@@ -200,7 +200,7 @@ const FormItem = ({ form, onDelete, onDragStart, onDragEnd, navigation }: FormIt
           style={[styles.plusContainer, { marginLeft: 8 }]}
           onPress={(e) => {
             e.stopPropagation();
-            navigation.navigate('ShareForm', { formId: form.id });
+            navigation.navigate('ShareTask', { formId: form.id });
           }}
           android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: true }}
         >

@@ -174,6 +174,7 @@ const Attendance: React.FC<Props> = ({ route, navigation }) => {
       id: newStudentId(),
       name: r.name,
       email: r.email,
+      rollNumber: r.rollNumber,
     }));
     persistRosterToClass([...roster, ...added]);
     setCsvPaste('');

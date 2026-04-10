@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList, MainTabRoute } from '../types/navigation';
@@ -20,6 +20,23 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 const TeacherTabShell: React.FC<Props> = ({ navigation, route }) => {
   const [tab, setTab] = useState<MainTabRoute>('Home');
   const { ink } = useThemeMode();
+  const bottomBarEnter = useRef(new Animated.Value(1)).current;
+
+  useLayoutEffect(() => {
+    if (route.params?.homeEntrance) {
+      bottomBarEnter.setValue(0);
+    }
+  }, [route.params?.homeEntrance, bottomBarEnter]);
+
+  useEffect(() => {
+    if (!route.params?.homeEntrance) return;
+    Animated.spring(bottomBarEnter, {
+      toValue: 1,
+      friction: 7,
+      tension: 78,
+      useNativeDriver: true,
+    }).start();
+  }, [route.params?.homeEntrance, bottomBarEnter]);
 
   const styles = useMemo(
     () =>
@@ -70,17 +87,19 @@ const TeacherTabShell: React.FC<Props> = ({ navigation, route }) => {
           <Quizzes navigation={navigation} embedded />
         </View>
         <View {...layerProps('ViewGrades')}>
-          <ViewGrades navigation={navigation} embedded />
+          <ViewGrades navigation={navigation} embedded active={tab === 'ViewGrades'} />
         </View>
         <View {...layerProps('Settings')}>
           <Settings navigation={navigation} embedded />
         </View>
       </View>
-      <BottomTab
-        navigation={navigation}
-        currentRoute={tab}
-        onSelectTab={(name) => setTab(name as MainTabRoute)}
-      />
+      <Animated.View style={{ opacity: bottomBarEnter }}>
+        <BottomTab
+          navigation={navigation}
+          currentRoute={tab}
+          onSelectTab={(name) => setTab(name as MainTabRoute)}
+        />
+      </Animated.View>
     </View>
   );
 };

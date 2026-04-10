@@ -13,7 +13,7 @@ if (!hookMatch) {
 const hook = hookMatch[0].trim() + '\n';
 s = s.replace(/\nfunction useViewGradesStyles\(\) \{[\s\S]*?\n\}\n(?=\n*export default)/, '\n');
 
-const marker = 'const ViewGrades: React.FC<Props> = ({ navigation, embedded }) => {';
+const marker = 'const ViewGrades: React.FC<Props> = ({ navigation, embedded, active }) => {';
 const idx = s.indexOf(marker);
 if (idx < 0) {
   console.error('ViewGrades marker not found');

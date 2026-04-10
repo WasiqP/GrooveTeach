@@ -14,8 +14,9 @@ export type RootStackParamList = {
   /**
    * Main teacher shell: tab panels swap in place (see `TeacherTabShell`).
    * Use `tab` when returning from another screen to open a specific tab.
+   * `homeEntrance` triggers a one-shot entrance animation on the Home tab (e.g. after Share task).
    */
-  Home: { tab?: MainTabRoute } | undefined;
+  Home: { tab?: MainTabRoute; homeEntrance?: boolean } | undefined;
   MyForms: undefined; // Legacy route (now Quizzes)
   MainScreen: undefined;
   // Teacher-specific screens
@@ -23,6 +24,8 @@ export type RootStackParamList = {
   ClassDetails: { classId: string };
   /** Roster for a class (from saved Create Class data). */
   ViewStudents: { classId: string };
+  /** Per-student attendance, grades, remark, and quick teacher actions. */
+  StudentRecords: { classId: string; studentId: string };
   LessonPlanner: undefined;
   /** Omit `classId` to choose a class on the Attendance screen first. */
   Attendance: { classId?: string };
@@ -36,9 +39,19 @@ export type RootStackParamList = {
   EditForm: { formId: string };
   QuestionsScreen: { formId: string; questionId: string };
   SwapQuestions: { formId: string };
-  ShareForm: { formId: string };
+  ShareTask: { formId: string };
   /** Full grade breakdown for one task (quiz, assignment, test, project, etc.). */
   TaskGradeReport: { classId: string; taskId: string };
+  /** Teacher display name, greeting preview, and quick stats. */
+  Profile: undefined;
+  /** Settings → notification toggles (persisted on device). */
+  NotificationSettings: undefined;
+  LanguageSettings: undefined;
+  HelpSupport: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
+  /** Version, logo, short product blurb. */
+  AboutApp: undefined;
 };
 
 

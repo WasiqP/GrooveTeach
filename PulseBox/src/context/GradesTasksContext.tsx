@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = 'groove_grades_tasks_v1';
@@ -12,8 +20,12 @@ export interface ClassTask {
   kind: TaskKind;
   /** Short label e.g. "Due Fri" */
   dueLabel?: string;
+  /** End of deadline window (ISO), for time-left / progress in UI. */
+  dueAt?: string;
   /** When the task was assigned (for Recent activity). */
   createdAt: string;
+  /** Source form when this task was published from the form builder. */
+  formId?: string;
 }
 
 export interface TaskGradeRecord {
@@ -92,12 +104,27 @@ const SEED: Store = {
   ],
 };
 
+export type AssignFormToClassesPayload = {
+  formId: string;
+  title: string;
+  kind: TaskKind;
+  dueLabel?: string;
+  /** Deadline end instant (ISO), optional; used for time remaining and progress. */
+  dueAt?: string;
+  /** One entry per class to assign; studentIds drive grade rows (pending) in View grades. */
+  targets: { classId: string; studentIds: string[] }[];
+};
+
 type GradesTasksContextValue = {
   tasks: ClassTask[];
   grades: TaskGradeRecord[];
   isLoading: boolean;
   getGrade: (classId: string, taskId: string, studentId: string) => TaskGradeRecord | undefined;
   getTasksForClass: (classId: string) => ClassTask[];
+  /** Creates/updates tasks and pending grade rows so the task appears under each class in View grades. */
+  assignFormToClasses: (payload: AssignFormToClassesPayload) => Promise<void>;
+  /** Removes gradebook tasks and grades tied to a deleted form (Share task → classes). */
+  removeTasksForForm: (formId: string) => Promise<void>;
 };
 
 const GradesTasksContext = createContext<GradesTasksContextValue | undefined>(undefined);
@@ -106,6 +133,14 @@ export const GradesTasksProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [tasks, setTasks] = useState<ClassTask[]>([]);
   const [grades, setGrades] = useState<TaskGradeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const tasksRef = useRef(tasks);
+  const gradesRef = useRef(grades);
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+  useEffect(() => {
+    gradesRef.current = grades;
+  }, [grades]);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,6 +185,75 @@ export const GradesTasksProvider: React.FC<{ children: React.ReactNode }> = ({ c
     [tasks],
   );
 
+  const assignFormToClasses = useCallback(async (payload: AssignFormToClassesPayload) => {
+    const now = new Date().toISOString();
+    let nextTasks = [...tasksRef.current];
+    let nextGrades = [...gradesRef.current];
+
+    for (const target of payload.targets) {
+      const taskId = `form-${payload.formId}-cls-${target.classId}`;
+      const taskRow: ClassTask = {
+        id: taskId,
+        classId: target.classId,
+        title: payload.title,
+        kind: payload.kind,
+        dueLabel: payload.dueLabel,
+        dueAt: payload.dueAt,
+        createdAt: now,
+        formId: payload.formId,
+      };
+      const idx = nextTasks.findIndex((t) => t.id === taskId);
+      if (idx >= 0) {
+        nextTasks[idx] = taskRow;
+      } else {
+        nextTasks.push(taskRow);
+      }
+
+      for (const studentId of target.studentIds) {
+        const exists = nextGrades.some(
+          (g) =>
+            g.classId === target.classId && g.taskId === taskId && g.studentId === studentId,
+        );
+        if (!exists) {
+          nextGrades.push({
+            id: `g-${taskId}-${studentId}`,
+            classId: target.classId,
+            taskId,
+            studentId,
+            grade: '—',
+            status: 'pending',
+          });
+        }
+      }
+    }
+
+    setTasks(nextTasks);
+    setGrades(nextGrades);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: nextTasks, grades: nextGrades }));
+    } catch (e) {
+      console.warn('persist grades/tasks failed', e);
+    }
+  }, []);
+
+  const removeTasksForForm = useCallback(async (formId: string) => {
+    const prevT = tasksRef.current;
+    const prevG = gradesRef.current;
+    const removedIds = new Set(prevT.filter((t) => t.formId === formId).map((t) => t.id));
+    if (removedIds.size === 0) {
+      return;
+    }
+    const nextTasks = prevT.filter((t) => t.formId !== formId);
+    const nextGrades = prevG.filter((g) => !removedIds.has(g.taskId));
+    setTasks(nextTasks);
+    setGrades(nextGrades);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: nextTasks, grades: nextGrades }));
+    } catch (e) {
+      console.warn('persist grades/tasks after form delete failed', e);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       tasks,
@@ -157,8 +261,10 @@ export const GradesTasksProvider: React.FC<{ children: React.ReactNode }> = ({ c
       isLoading,
       getGrade,
       getTasksForClass,
+      assignFormToClasses,
+      removeTasksForForm,
     }),
-    [tasks, grades, isLoading, getGrade, getTasksForClass],
+    [tasks, grades, isLoading, getGrade, getTasksForClass, assignFormToClasses, removeTasksForForm],
   );
 
   return <GradesTasksContext.Provider value={value}>{children}</GradesTasksContext.Provider>;

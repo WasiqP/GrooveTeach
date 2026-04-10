@@ -17,6 +17,7 @@ import { FormsProvider } from './src/context/FormsContext';
 import { ClassesProvider } from './src/context/ClassesContext';
 import { GradesTasksProvider } from './src/context/GradesTasksContext';
 import { UserProvider } from './src/context/UserContext';
+import { AppSettingsProvider } from './src/context/AppSettingsContext';
 import { AlertModalProvider } from './src/context/AlertModalContext';
 import { ThemeProvider, useThemeMode } from './src/theme';
 
@@ -43,7 +44,15 @@ import Attendance from './src/teacher/Attendance';
 import CreateClass from './src/teacher/CreateClass';
 import ClassDetails from './src/teacher/ClassDetails';
 import ViewStudents from './src/teacher/ViewStudents';
+import StudentRecordsScreen from './src/teacher/StudentRecordsScreen';
 import TaskGradeReport from './src/main/TaskGradeReport';
+import Profile from './src/main/Profile';
+import NotificationSettingsScreen from './src/main/settings/NotificationSettingsScreen';
+import LanguageSettingsScreen from './src/main/settings/LanguageSettingsScreen';
+import HelpSupportScreen from './src/main/settings/HelpSupportScreen';
+import TermsOfServiceScreen from './src/main/settings/TermsOfServiceScreen';
+import PrivacyPolicyScreen from './src/main/settings/PrivacyPolicyScreen';
+import AboutAppScreen from './src/main/settings/AboutAppScreen';
 
 // Navigation types
 import type { RootStackParamList } from './src/types/navigation';
@@ -127,11 +136,19 @@ function AppNavigation() {
             <Stack.Screen name="CreateClass" component={CreateClass} />
             <Stack.Screen name="ClassDetails" component={ClassDetails} />
             <Stack.Screen name="ViewStudents" component={ViewStudents} />
+            <Stack.Screen name="StudentRecords" component={StudentRecordsScreen} />
             <Stack.Screen name="TaskGradeReport" component={TaskGradeReport} />
+            <Stack.Screen name="Profile" component={Profile} />
+            <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+            <Stack.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+            <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+            <Stack.Screen name="AboutApp" component={AboutAppScreen} />
             <Stack.Screen name="CreateForm" component={CreateForm} />
             <Stack.Screen name="EditForm" component={EditForm} />
             <Stack.Screen name="QuestionsScreen" component={QuestionsScreen} />
-            <Stack.Screen name="ShareForm" component={ShareForm} />
+            <Stack.Screen name="ShareTask" component={ShareForm} />
             <Stack.Screen
               name="SwapQuestions"
               component={SwapQuestionsScreen}
@@ -162,6 +179,7 @@ function App() {
       <ThemeProvider>
         <AlertModalProvider>
           <UserProvider>
+            <AppSettingsProvider>
             <FormsProvider>
               <ClassesProvider>
                 <GradesTasksProvider>
@@ -175,6 +193,7 @@ function App() {
                 </GradesTasksProvider>
               </ClassesProvider>
             </FormsProvider>
+            </AppSettingsProvider>
           </UserProvider>
         </AlertModalProvider>
       </ThemeProvider>
