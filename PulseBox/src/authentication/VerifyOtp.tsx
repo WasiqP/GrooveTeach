@@ -11,7 +11,6 @@ import {
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { fonts as F, radius, useThemeMode } from '../theme';
@@ -19,6 +18,8 @@ import BackButton from '../components/Reusable-Components/BackButton';
 import { PulseScrollView } from '../components/PulseScrollView';
 import { useUser } from '../context/UserContext';
 import { usePulseAlert } from '../context/AlertModalContext';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { scaleFont, useResponsive } from '../ui/responsive';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VerifyOtp'>;
 
@@ -28,6 +29,7 @@ const CELL = 48;
 
 const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
   const { ink, theme } = useThemeMode();
+  const r = useResponsive();
   const { email, purpose, name } = route.params;
   const { setDisplayName } = useUser();
   const { showAlert, showSuccess } = usePulseAlert();
@@ -102,7 +104,10 @@ const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
         await setDisplayName(name.trim());
       }
       showSuccess('You’re verified', 'Welcome to GrooveBox.', () => {
-        navigation.replace('Home');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       });
       return;
     }
@@ -143,10 +148,10 @@ const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
           marginBottom: 2,
         },
         scrollContent: {
-          paddingHorizontal: 28,
+          paddingHorizontal: r.gutter,
           paddingTop: 0,
           paddingBottom: 24,
-          maxWidth: 480,
+          maxWidth: r.contentMaxWidth,
           width: '100%',
           alignSelf: 'center',
         },
@@ -169,8 +174,8 @@ const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
           marginBottom: 4,
         },
         heading: {
-          fontSize: 32,
-          lineHeight: 36,
+          fontSize: scaleFont(32, r.titleScale),
+          lineHeight: scaleFont(36, r.titleScale),
           fontFamily: F.outfitBlack,
           color: ink.ink,
           marginBottom: 2,
@@ -273,11 +278,11 @@ const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
           fontFamily: F.outfitBold,
         },
       }),
-    [ink, theme],
+    [ink, theme, r.gutter, r.contentMaxWidth, r.titleScale],
   );
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+    <ScreenFrame style={styles.screen} edges={['top', 'bottom']} framed={false}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -371,7 +376,7 @@ const VerifyOtp: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </PulseScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

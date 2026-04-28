@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { fonts as F, radius, useThemeMode } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { scaleFont, useResponsive } from '../ui/responsive';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -12,6 +13,7 @@ const Login: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { ink, theme } = useThemeMode();
+  const r = useResponsive();
 
   const styles = useMemo(
     () =>
@@ -19,7 +21,6 @@ const Login: React.FC<Props> = ({ navigation }) => {
         screen: {
           flex: 1,
           backgroundColor: ink.canvas,
-          paddingHorizontal: 28,
           paddingTop: 0,
         },
         backBtn: {
@@ -34,8 +35,8 @@ const Login: React.FC<Props> = ({ navigation }) => {
         logo: { width: 172, height: 146, maxWidth: '100%' },
         content: { flex: 1 },
         heading: {
-          fontSize: 36,
-          lineHeight: 40,
+          fontSize: scaleFont(36, r.titleScale),
+          lineHeight: scaleFont(40, r.titleScale),
           fontFamily: F.outfitBlack,
           color: ink.ink,
           marginTop: 4,
@@ -124,7 +125,7 @@ const Login: React.FC<Props> = ({ navigation }) => {
           fontFamily: F.outfitBold,
         },
       }),
-    [ink, theme],
+    [ink, theme, r.titleScale],
   );
 
   const handleBack = () => {
@@ -136,7 +137,7 @@ const Login: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+    <ScreenFrame style={styles.screen} edges={['top', 'bottom']}>
       <BackButton onPress={handleBack} style={styles.backBtn} />
       <View style={styles.brandRow}>
         <Image
@@ -171,7 +172,12 @@ const Login: React.FC<Props> = ({ navigation }) => {
         <Pressable
           style={styles.primaryBtn}
           android_ripple={{ color: theme.rippleLight }}
-          onPress={() => navigation.replace('Home')}
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            })
+          }
         >
           <Text style={styles.primaryLabel}>Log In</Text>
         </Pressable>
@@ -194,7 +200,7 @@ const Login: React.FC<Props> = ({ navigation }) => {
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

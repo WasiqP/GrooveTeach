@@ -243,15 +243,16 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  /** At most one day per meeting block; tap the same day again to clear. */
+  /** Multi-select days per meeting block; tap again to remove. */
   const toggleDayInBlock = (blockId: string, dayId: number) => {
     setScheduleBlocks((prev) =>
       prev.map((b) => {
         if (b.id !== blockId) return b;
-        if (b.dayIds.length === 1 && b.dayIds[0] === dayId) {
-          return { ...b, dayIds: [] };
-        }
-        return { ...b, dayIds: [dayId] };
+        const set = new Set(b.dayIds);
+        if (set.has(dayId)) set.delete(dayId);
+        else set.add(dayId);
+        const dayIds = [...set].sort((a, b2) => a - b2);
+        return { ...b, dayIds };
       }),
     );
   };
@@ -512,8 +513,9 @@ const CreateClass: React.FC<Props> = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionEyebrow}>Schedule</Text>
           <Text style={styles.sectionLead}>
-            Add one or more meeting times. Pick a single day per block, then set the hours. Use
-            &quot;Add another meeting time&quot; for more days (e.g. Mon 9–10 AM and Thu 2–3 PM).
+            Add one or more meeting times. Choose one or more days for a time block, then set the
+            hours. Use &quot;Add another meeting time&quot; only if you need different hours (e.g. Mon/Wed/Fri
+            9–10 AM and Tue/Thu 2–3 PM).
           </Text>
 
           {scheduleBlocks.map((block, blockIndex) => (

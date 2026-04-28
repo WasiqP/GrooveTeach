@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, BackHandler, Platform, ToastAndroid } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList, MainTabRoute } from '../types/navigation';
@@ -21,6 +21,7 @@ const TeacherTabShell: React.FC<Props> = ({ navigation, route }) => {
   const [tab, setTab] = useState<MainTabRoute>('Home');
   const { ink } = useThemeMode();
   const bottomBarEnter = useRef(new Animated.Value(1)).current;
+  const lastBackAt = useRef<number>(0);
 
   useLayoutEffect(() => {
     if (route.params?.homeEntrance) {
@@ -67,6 +68,35 @@ const TeacherTabShell: React.FC<Props> = ({ navigation, route }) => {
         navigation.setParams({ tab: undefined });
       }
     }, [navigation, route.params?.tab]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== 'android') return;
+
+      const onBackPress = () => {
+        // Inside the main shell, we treat "back" as:
+        // - go to Home tab if user is on another tab
+        // - otherwise (Home tab root), require a second back press to exit the app
+        if (tab !== 'Home') {
+          setTab('Home');
+          return true;
+        }
+
+        const now = Date.now();
+        if (now - lastBackAt.current < 2000) {
+          BackHandler.exitApp();
+          return true;
+        }
+
+        lastBackAt.current = now;
+        ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+        return true;
+      };
+
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => sub.remove();
+    }, [tab]),
   );
 
   const layerProps = (name: MainTabRoute) => ({

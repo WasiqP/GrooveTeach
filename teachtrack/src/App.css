@@ -1,0 +1,43 @@
+.tt-page {
+  min-height: 100vh;
+  padding: 20px var(--gutter) 24px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.tt-topBrand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tt-brandMark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tt-brandBadge {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  background: var(--primary-soft);
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.tt-card {
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}

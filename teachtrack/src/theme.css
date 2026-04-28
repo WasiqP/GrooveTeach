@@ -1,0 +1,111 @@
+/* TeachTrack theme tokens (PulseBox parity + web-friendly aliases) */
+
+/* Load same families as PulseBox (Outfit + DM Sans). */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap');
+
+/* Light Theme (Default) */
+:root,
+[data-theme='light'] {
+  /* Ink tokens (PulseBox: lightPalette.ink) */
+  --ink-canvas: #ffffff;
+  --ink-ink: #050508;
+  --ink-inkSoft: #1a1a22;
+  --ink-placeholder: rgba(26, 26, 34, 0.45);
+  --ink-iconMuted: rgba(26, 26, 34, 0.32);
+  --ink-borderInk: #000000;
+  --ink-borderWidth: 2px;
+  --ink-rowDivider: rgba(0, 0, 0, 0.12);
+  --ink-iconWell: rgba(160, 96, 255, 0.14);
+  --ink-pressTint: rgba(160, 96, 255, 0.07);
+
+  /* App theme (PulseBox: lightPalette.appTheme) */
+  --primary: #a060ff;
+  --primary-soft: rgba(160, 96, 255, 0.12);
+  --primary-alt: #0d9488;
+
+  --surface: #ffffff;
+  --surface-alt: #ffffff;
+  --surface-card: #ffffff;
+  --surface-hero: #1a1428;
+  --surface-hero-elevated: #261d38;
+
+  --text: #0f172a;
+  --text-dim: #64748b;
+  --border: #e2e8f0;
+
+  --rippleLight: rgba(160, 96, 255, 0.12);
+}
+
+/* Dark Theme */
+[data-theme='dark'] {
+  --ink-canvas: #0b0b0f;
+  --ink-ink: #f2f2f7;
+  --ink-inkSoft: #a8a8b8;
+  --ink-placeholder: rgba(242, 242, 247, 0.42);
+  --ink-iconMuted: rgba(242, 242, 247, 0.28);
+  --ink-borderInk: #3a3a48;
+  --ink-borderWidth: 2px;
+  --ink-rowDivider: rgba(255, 255, 255, 0.09);
+  --ink-iconWell: rgba(160, 96, 255, 0.22);
+  --ink-pressTint: rgba(160, 96, 255, 0.12);
+
+  --primary: #c49fff;
+  --primary-soft: rgba(196, 159, 255, 0.16);
+  --primary-alt: #2dd4bf;
+
+  --surface: #0b0b0f;
+  --surface-alt: #12121a;
+  --surface-card: #14141c;
+  --surface-hero: #0b0b0f;
+  --surface-hero-elevated: #16161f;
+
+  --text: #f2f2f7;
+  --text-dim: #9ca3af;
+  --border: #2e2e3a;
+
+  --rippleLight: rgba(196, 159, 255, 0.14);
+}
+
+/* Common variables */
+:root {
+  --font-display: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --radius-card: 16px;
+  --radius-input: 12px;
+  --radius-btn: 14px;
+
+  --shadow-elev: 0 14px 30px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 20px rgba(160, 96, 255, 0.2);
+
+  --gutter: 14px;
+  --gutter-lg: 16px;
+  --gutter-sm: 12px;
+}
+
+@media (min-width: 430px) {
+  :root {
+    --gutter: var(--gutter-lg);
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --gutter: var(--gutter-sm);
+  }
+}
+
+/* Backwards-compatible aliases */
+:root,
+[data-theme='light'],
+[data-theme='dark'] {
+  --ink-text: var(--ink-ink);
+  --ink-text-soft: var(--ink-inkSoft);
+  --ink-icon-muted: var(--ink-iconMuted);
+  --ink-border: var(--ink-borderInk);
+  --ink-border-width: var(--ink-borderWidth);
+  --ink-row-divider: var(--ink-rowDivider);
+  --ink-icon-well: var(--ink-iconWell);
+  --ink-press-tint: var(--ink-pressTint);
+}
+

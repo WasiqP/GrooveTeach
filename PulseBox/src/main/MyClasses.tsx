@@ -7,7 +7,6 @@ import {
   TextInput,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
@@ -17,6 +16,8 @@ import { usePulseAlert } from '../context/AlertModalContext';
 import { fonts as F, radius, useThemeMode } from '../theme';
 import { PulseScrollView } from '../components/PulseScrollView';
 import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { useResponsive } from '../ui/responsive';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -173,6 +174,7 @@ const TrashIcon = ({ size = 18, color = '#DC2626' }: { size?: number; color?: st
 
 const MyClasses: React.FC<Props> = ({ navigation, embedded }) => {
   const { ink, theme } = useThemeMode();
+  const r = useResponsive();
   const { classes, deleteClass } = useClasses();
   const { showAlert } = usePulseAlert();
   const [searchQuery, setSearchQuery] = useState('');
@@ -244,9 +246,12 @@ const MyClasses: React.FC<Props> = ({ navigation, embedded }) => {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: r.gutter,
     paddingTop: 4,
     paddingBottom: 108,
+    width: '100%',
+    maxWidth: r.contentMaxWidth,
+    alignSelf: 'center',
   },
   hero: {
     marginBottom: 16,
@@ -529,11 +534,14 @@ const MyClasses: React.FC<Props> = ({ navigation, embedded }) => {
     maxWidth: 300,
   },
       }),
-    [ink, theme],
+    [ink, theme, r.gutter, r.contentMaxWidth],
   );
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <TabScreenHeaderBar navigation={navigation}>
+    <ScreenFrame style={styles.container} edges={['top']} framed={false}>
+      <TabScreenHeaderBar
+        navigation={navigation}
+        onBackFallback={() => navigation.navigate('Home', { tab: 'Home' })}
+      >
         <View>
           <Text style={styles.title}>My Classes</Text>
           <Text style={styles.subtitle}>
@@ -679,7 +687,7 @@ const MyClasses: React.FC<Props> = ({ navigation, embedded }) => {
       </PulseScrollView>
 
       {!embedded && <BottomTab navigation={navigation} currentRoute="MyClasses" />}
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

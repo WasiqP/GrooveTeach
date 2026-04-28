@@ -1,0 +1,121 @@
+.tt-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 248px;
+  flex-shrink: 0;
+  background: var(--ink-canvas);
+  border-right: var(--ink-borderWidth) solid var(--ink-borderInk);
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tt-sidebarBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 14px;
+  border-bottom: var(--ink-borderWidth) solid var(--ink-borderInk);
+}
+
+.tt-sidebarBrandText {
+  display: grid;
+  gap: 2px;
+}
+
+.tt-sidebarNav {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+
+.tt-sidebarFooter {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: var(--ink-borderWidth) solid var(--ink-borderInk);
+}
+
+.tt-navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 12px;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-inkSoft);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.tt-navItem:hover {
+  background: var(--ink-pressTint);
+  color: var(--ink-ink);
+}
+
+.tt-navItem:active {
+  transform: translateY(1px);
+}
+
+.tt-navItem.is-active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+}
+
+.tt-navLogout {
+  color: var(--ink-inkSoft);
+}
+
+@media (max-width: 900px) {
+  .tt-sidebar {
+    position: sticky;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    border-right: 0;
+    border-top: var(--ink-borderWidth) solid var(--ink-borderInk);
+    padding: 8px var(--gutter) calc(8px + env(safe-area-inset-bottom));
+    overflow-x: auto;
+    gap: 6px;
+    z-index: 20;
+  }
+
+  .tt-sidebarBrand,
+  .tt-sidebarFooter {
+    display: none;
+  }
+
+  .tt-sidebarNav {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    overflow-x: auto;
+  }
+
+  .tt-navItem {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 64px;
+  }
+
+  .tt-navItem.is-active {
+    box-shadow: 0 2px 0 var(--ink-borderInk);
+  }
+}

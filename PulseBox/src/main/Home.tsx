@@ -12,7 +12,6 @@ import {
   LayoutAnimation,
   UIManager,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { MainTabRoute, RootStackParamList } from '../types/navigation';
@@ -20,6 +19,8 @@ import { fonts as F, radius, useThemeMode } from '../theme';
 import Svg, { Path, Circle } from 'react-native-svg';
 import BottomTab from '../components/BottomTab';
 import { PulseScrollView } from '../components/PulseScrollView';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { scaleFont, useResponsive } from '../ui/responsive';
 import {
   useClasses,
   type ClassActivityItem,
@@ -44,7 +45,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const PAGE_H = 20;
 const R_CARD = radius.card;
 
 /** Relative time for activity rows (short, locale-friendly). */
@@ -361,6 +361,7 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab, route }) => 
   const { firstName, displayName } = useUser();
   const { showAlert, showSuccess } = usePulseAlert();
   const { ink, theme } = useThemeMode();
+  const r = useResponsive();
 
   const [announcementDraft, setAnnouncementDraft] = useState('');
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -637,6 +638,10 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab, route }) => 
   },
   page: {
     paddingTop: 8,
+    width: '100%',
+    maxWidth: r.contentMaxWidth,
+    alignSelf: 'center',
+    paddingHorizontal: r.gutter,
   },
   headerBlock: {
     marginTop: 10,
@@ -693,8 +698,8 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab, route }) => 
   greetingDisplay: {
     flex: 1,
     minWidth: 0,
-    fontSize: 40,
-    lineHeight: 44,
+    fontSize: scaleFont(40, r.titleScale),
+    lineHeight: scaleFont(44, r.titleScale),
     fontFamily: F.outfitBlack,
     color: INK,
     letterSpacing: -1,
@@ -1329,11 +1334,11 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab, route }) => 
     height: 8,
   },
 }),
-    [ink, theme],
+    [ink, theme, r.gutter, r.contentMaxWidth, r.titleScale],
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <ScreenFrame style={styles.safe} edges={['top']} framed={false}>
       <View style={styles.root}>
         <PulseScrollView
           style={styles.scroll}
@@ -1341,7 +1346,7 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab, route }) => 
           showsVerticalScrollIndicator={false}
           removeClippedSubviews={Platform.OS === 'android'}
         >
-          <View style={[styles.page, { paddingHorizontal: PAGE_H }]}>
+          <View style={styles.page}>
             <Animated.View
               style={{
                 opacity: homeSegOpacity[0],
@@ -1935,7 +1940,7 @@ const Home: React.FC<Props> = ({ navigation, embedded, onSelectTab, route }) => 
 
         {!embedded && <BottomTab navigation={navigation} currentRoute="Home" />}
       </View>
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

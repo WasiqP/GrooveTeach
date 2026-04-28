@@ -1,0 +1,549 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Auth pages — split layout (form left, hero right)
+   Layout inspired by previous Website-FrontEnd LoginPage/SignUpPage,
+   restyled with TeachTrack tokens (Outfit + DM Sans, ink borders, pressed btns).
+   ────────────────────────────────────────────────────────────────────────── */
+
+.tt-authShell {
+  min-height: 100vh;
+  background: var(--ink-canvas);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 1.6vh, 18px) clamp(12px, 2vw, 24px);
+}
+
+.tt-authCard {
+  width: 100%;
+  max-width: 1080px;
+  max-height: calc(100vh - clamp(20px, 3vh, 36px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 0;
+  background: var(--surface-card);
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 6px 0 var(--ink-borderInk);
+}
+
+/* When viewport is short, allow internal scrolling per panel */
+.tt-authPanel {
+  overflow: auto;
+}
+
+/* ─── LEFT: form panel ─────────────────────────────────────────────────── */
+.tt-authPanel {
+  padding: clamp(18px, 2.6vh, 28px) clamp(18px, 3.2vw, 36px) clamp(20px, 2.8vh, 30px);
+  display: grid;
+  align-content: start;
+  gap: clamp(8px, 1.2vh, 12px);
+  min-width: 0;
+}
+
+.tt-authBackRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.tt-authBackLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-ink);
+  padding: 6px 10px;
+  border-radius: 9999px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  background: var(--surface-card);
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.tt-authBackLink:hover {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 var(--ink-borderInk);
+}
+
+.tt-authBackLink:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink-borderInk);
+}
+
+.tt-authBrandInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--ink-ink);
+}
+
+.tt-authBrandInline .tt-logo {
+  width: 24px;
+  height: auto;
+}
+
+.tt-authBrandAccent {
+  color: var(--primary);
+}
+
+.tt-authPanelHeader {
+  margin-top: 2px;
+  display: grid;
+  gap: 2px;
+}
+
+.tt-authEyebrow {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: var(--ink-inkSoft);
+  text-transform: uppercase;
+}
+
+.tt-authHeading {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.1;
+  letter-spacing: -0.6px;
+  color: var(--ink-ink);
+  margin-top: 2px;
+}
+
+.tt-authGreeting {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 19px;
+  color: var(--ink-inkSoft);
+  margin-top: 2px;
+}
+
+/* form ----------------------------------------------------------------- */
+.tt-authForm {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tt-authField {
+  display: grid;
+  gap: 4px;
+}
+
+.tt-authField > label {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--ink-inkSoft);
+}
+
+.tt-authInput {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ink-canvas);
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  border-radius: var(--radius-input);
+  padding: 8px 12px;
+  transition: box-shadow 120ms ease;
+}
+
+.tt-authInput:focus-within {
+  box-shadow: 0 0 0 3px var(--rippleLight);
+}
+
+.tt-authInput svg {
+  width: 16px;
+  height: 16px;
+  color: var(--ink-inkSoft);
+  flex-shrink: 0;
+}
+
+.tt-authInput input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-ink);
+  padding: 2px 0;
+}
+
+.tt-authInput input::placeholder {
+  color: var(--ink-placeholder);
+}
+
+.tt-authActionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.tt-authCheckbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink-inkSoft);
+  cursor: pointer;
+}
+
+.tt-authCheckbox input {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  border-radius: 4px;
+  background: var(--ink-canvas);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 140ms ease;
+}
+
+.tt-authCheckbox input:checked {
+  background: var(--primary);
+}
+
+.tt-authCheckbox input:checked::after {
+  content: '';
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+.tt-authLink {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--ink-ink);
+  text-decoration: none;
+  border-bottom: 2px solid var(--ink-borderInk);
+  padding-bottom: 1px;
+}
+
+.tt-authLink:hover {
+  color: var(--primary);
+}
+
+.tt-authCta {
+  margin-top: 4px;
+  width: 100%;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  border-radius: var(--radius-btn);
+  padding: 11px 18px;
+  background: var(--primary);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--ink-borderInk);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.tt-authCta:hover {
+  transform: translateY(1px);
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+}
+
+.tt-authCta:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--ink-borderInk);
+}
+
+.tt-authCta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* divider + socials --------------------------------------------------- */
+.tt-authDivider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0;
+}
+
+.tt-authDivider::before,
+.tt-authDivider::after {
+  content: '';
+  height: 1px;
+  background: var(--ink-rowDivider);
+}
+
+.tt-authDivider span {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-inkSoft);
+}
+
+.tt-authSocialRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tt-authSocialBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-btn);
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  background: var(--surface-card);
+  color: var(--ink-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.tt-authSocialBtn:hover {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 var(--ink-borderInk);
+}
+
+.tt-authSocialBtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink-borderInk);
+}
+
+.tt-authSocialBtn .tt-socialMark {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 10px;
+  color: #fff;
+}
+
+.tt-authSocialBtn .tt-socialMark.is-google {
+  background: #ea4335;
+}
+
+.tt-authSocialBtn .tt-socialMark.is-facebook {
+  background: #1877f2;
+}
+
+.tt-authSwitch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  color: var(--ink-inkSoft);
+  font-size: 13px;
+}
+
+.tt-authSwitch a {
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 2px solid var(--ink-borderInk);
+  padding-bottom: 1px;
+}
+
+.tt-authLegal {
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--ink-inkSoft);
+  text-align: center;
+  margin-top: 2px;
+  line-height: 16px;
+}
+
+/* ─── RIGHT: hero panel ───────────────────────────────────────────────── */
+.tt-authHero {
+  position: relative;
+  padding: clamp(14px, 2vh, 22px);
+  display: grid;
+  background:
+    radial-gradient(120% 90% at 100% 0%, var(--primary-soft) 0%, transparent 60%),
+    radial-gradient(80% 60% at 0% 100%, rgba(160, 96, 255, 0.12) 0%, transparent 60%),
+    var(--surface-card);
+  border-left: var(--ink-borderWidth) solid var(--ink-borderInk);
+}
+
+.tt-authHeroCard {
+  position: relative;
+  border-radius: 20px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  background: linear-gradient(180deg, #ffffff 0%, var(--primary-soft) 100%);
+  box-shadow: 0 6px 0 var(--ink-borderInk);
+  padding: clamp(16px, 2.4vh, 22px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(10px, 1.6vh, 16px);
+  height: 100%;
+  overflow: hidden;
+}
+
+.tt-authHeroBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tt-authHeroBadge {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  background: var(--ink-canvas);
+  color: var(--ink-ink);
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+}
+
+.tt-authHeroOwl {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.tt-authHeroOwl::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -22px 0;
+  height: 22px;
+  background: radial-gradient(50% 100% at 50% 0%, rgba(0, 0, 0, 0.18), transparent 70%);
+  filter: blur(2px);
+  z-index: -1;
+}
+
+.tt-authHeroOwl .tt-logo {
+  width: min(60%, 240px);
+  max-height: 100%;
+  height: auto;
+  filter: drop-shadow(0 10px 0 rgba(0, 0, 0, 0.06));
+}
+
+.tt-authChat {
+  display: grid;
+  gap: 8px;
+  align-content: end;
+}
+
+.tt-authBubble {
+  max-width: 82%;
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 17px;
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+}
+
+.tt-authBubble.is-bot {
+  justify-self: start;
+  background: #ffffff;
+  color: var(--ink-ink);
+  border-bottom-left-radius: 6px;
+}
+
+.tt-authBubble.is-user {
+  justify-self: end;
+  background: var(--primary);
+  color: #ffffff;
+  border-bottom-right-radius: 6px;
+}
+
+.tt-authBubble strong {
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 980px) {
+  .tt-authCard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tt-authHero {
+    border-left: 0;
+    border-top: var(--ink-borderWidth) solid var(--ink-borderInk);
+  }
+
+  .tt-authHeroCard {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 560px) {
+  .tt-authShell {
+    padding: 0;
+  }
+
+  .tt-authCard {
+    border-radius: 0;
+    border-width: 0;
+    box-shadow: none;
+  }
+
+  .tt-authPanel {
+    padding: 22px var(--gutter) 28px;
+  }
+
+  .tt-authSocialRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── OTP boxes (used by VerifyOtp; keeps split layout consistent) ─── */
+.tt-otpRow {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.tt-otpBox {
+  width: 100%;
+  height: 46px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  border-radius: var(--radius-input);
+  background: var(--ink-canvas);
+  color: var(--ink-ink);
+  outline: none;
+}
+
+.tt-otpBox:focus {
+  box-shadow: 0 0 0 3px var(--rippleLight);
+}

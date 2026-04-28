@@ -1,0 +1,75 @@
+/* PulseBox parity typography classes */
+
+.tt-screen {
+  background: var(--ink-canvas);
+  color: var(--ink-ink);
+}
+
+.tt-titleScreen {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 32px;
+  line-height: 38px;
+  letter-spacing: -0.8px;
+  color: var(--ink-ink);
+}
+
+.tt-titleLarge {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 32px;
+  letter-spacing: -0.5px;
+  color: var(--ink-ink);
+}
+
+.tt-titleSection {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 28px;
+  letter-spacing: -0.45px;
+  color: var(--ink-ink);
+}
+
+.tt-subtitle {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink-inkSoft);
+}
+
+.tt-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-inkSoft);
+}
+
+.tt-label {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink-inkSoft);
+}
+
+.tt-sectionLabel {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 1.2px;
+  color: var(--ink-inkSoft);
+  text-transform: uppercase;
+}
+
+/* Bold black underline utility (Duolingo-ish emphasis) */
+.tt-underline {
+  display: inline-block;
+  border-bottom: 3px solid var(--ink-borderInk, #000);
+  padding-bottom: 2px;
+}
+

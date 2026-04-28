@@ -9,19 +9,21 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { fonts as F, radius, useThemeMode } from '../theme';
 import BackButton from '../components/Reusable-Components/BackButton';
 import { usePulseAlert } from '../context/AlertModalContext';
 import { PulseScrollView } from '../components/PulseScrollView';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { scaleFont, useResponsive } from '../ui/responsive';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 const SignUp: React.FC<Props> = ({ navigation }) => {
   const { ink, theme } = useThemeMode();
   const { showAlert } = usePulseAlert();
+  const r = useResponsive();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,10 +50,10 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           marginBottom: 2,
         },
         scrollContent: {
-          paddingHorizontal: 28,
+          paddingHorizontal: r.gutter,
           paddingTop: 0,
           paddingBottom: 18,
-          maxWidth: 480,
+          maxWidth: r.contentMaxWidth,
           width: '100%',
           alignSelf: 'center',
         },
@@ -74,8 +76,8 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           marginBottom: 4,
         },
         heading: {
-          fontSize: 34,
-          lineHeight: 40,
+          fontSize: scaleFont(34, r.titleScale),
+          lineHeight: scaleFont(40, r.titleScale),
           fontFamily: F.outfitBlack,
           color: ink.ink,
           marginTop: 0,
@@ -166,11 +168,11 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           fontFamily: F.outfitBold,
         },
       }),
-    [ink, theme],
+    [ink, theme, r.gutter, r.contentMaxWidth, r.titleScale],
   );
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+    <ScreenFrame style={styles.screen} edges={['top', 'bottom']} framed={false}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -284,7 +286,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           </View>
         </PulseScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

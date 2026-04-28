@@ -1,0 +1,33 @@
+.tt-inputWrap {
+  display: grid;
+  gap: 8px;
+}
+
+.tt-inputLabel {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink-inkSoft);
+}
+
+.tt-input {
+  width: 100%;
+  border-width: var(--ink-borderWidth, 2px);
+  border-style: solid;
+  border-color: var(--ink-borderInk);
+  border-radius: var(--radius-input, 12px);
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 22px;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--ink-ink);
+  background: var(--ink-canvas);
+  outline: none;
+}
+
+.tt-input:focus {
+  box-shadow: 0 0 0 3px var(--rippleLight);
+}
+

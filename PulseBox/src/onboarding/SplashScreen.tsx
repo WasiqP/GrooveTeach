@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Image, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { fonts as F, useThemeMode } from '../theme';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { scaleFont, useResponsive } from '../ui/responsive';
 
 /**
  * Short branded splash shown while the app loads—matches brand purple and introduces the product for teachers.
  */
 const SplashScreen: React.FC = () => {
   const { theme } = useThemeMode();
+  const r = useResponsive();
   const BG = theme.primary;
 
   const styles = useMemo(
@@ -30,8 +32,8 @@ const SplashScreen: React.FC = () => {
           marginBottom: 28,
         },
         headline: {
-          fontSize: 30,
-          lineHeight: 36,
+          fontSize: scaleFont(30, r.titleScale),
+          lineHeight: scaleFont(36, r.titleScale),
           fontFamily: F.outfitBlack,
           color: '#FFFFFF',
           textAlign: 'center',
@@ -44,14 +46,14 @@ const SplashScreen: React.FC = () => {
           fontFamily: F.dmRegular,
           color: 'rgba(255,255,255,0.92)',
           textAlign: 'center',
-          maxWidth: 340,
+          maxWidth: r.contentMaxWidth,
         },
       }),
-    [BG],
+    [BG, r.titleScale, r.contentMaxWidth],
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
+    <ScreenFrame style={styles.safe} edges={['top', 'bottom', 'left', 'right']} framed={false}>
       <StatusBar barStyle="light-content" backgroundColor={BG} />
       <View style={styles.inner}>
         <Image
@@ -66,7 +68,7 @@ const SplashScreen: React.FC = () => {
           Plan lessons, take attendance, and run class—from one clear dashboard.
         </Text>
       </View>
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

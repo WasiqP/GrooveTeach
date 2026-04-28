@@ -3,6 +3,7 @@ import { View, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeMode } from '../theme';
+import { useResponsive } from '../ui/responsive';
 
 /** Space between icons and the top of the system nav / home indicator zone */
 const TAB_CONTENT_BOTTOM = 12;
@@ -115,6 +116,7 @@ const BottomTab: React.FC<BottomTabProps> = ({
   onSelectTab,
 }) => {
   const { ink, theme } = useThemeMode();
+  const r = useResponsive();
   const insets = useSafeAreaInsets();
   const paddingBottom = useSafeArea ? TAB_CONTENT_BOTTOM + insets.bottom : 16;
 
@@ -124,8 +126,8 @@ const BottomTab: React.FC<BottomTabProps> = ({
         bottomNav: {
           flexDirection: 'row',
           backgroundColor: ink.canvas,
-          paddingHorizontal: 20,
-          paddingTop: 20,
+          paddingHorizontal: r.gutter,
+          paddingTop: 16,
           borderTopWidth: ink.borderWidth,
           borderTopColor: ink.borderInk,
           justifyContent: 'space-around',
@@ -138,7 +140,7 @@ const BottomTab: React.FC<BottomTabProps> = ({
           borderRadius: 12,
         },
       }),
-    [ink],
+    [ink, r.gutter],
   );
 
   const handleNavigate = (routeName: string) => {

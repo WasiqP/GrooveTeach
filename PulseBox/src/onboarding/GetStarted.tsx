@@ -7,16 +7,18 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { fonts as F, useThemeMode } from '../theme';
 import { PulseScrollView } from '../components/PulseScrollView';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { scaleFont, useResponsive } from '../ui/responsive';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GetStarted'>;
 
 const GetStarted: React.FC<Props> = ({ navigation }) => {
   const { ink, theme } = useThemeMode();
+  const r = useResponsive();
 
   const styles = useMemo(
     () =>
@@ -27,7 +29,7 @@ const GetStarted: React.FC<Props> = ({ navigation }) => {
         },
         scrollInner: {
           flexGrow: 1,
-          paddingHorizontal: 28,
+          paddingHorizontal: r.gutter,
           paddingTop: 20,
           paddingBottom: Platform.OS === 'ios' ? 24 : 16,
           justifyContent: 'center',
@@ -53,7 +55,7 @@ const GetStarted: React.FC<Props> = ({ navigation }) => {
         hero: {
           alignSelf: 'flex-start',
           width: '100%',
-          maxWidth: 360,
+          maxWidth: r.contentMaxWidth,
           alignItems: 'flex-start',
         },
         eyebrow: {
@@ -65,8 +67,8 @@ const GetStarted: React.FC<Props> = ({ navigation }) => {
           marginBottom: 8,
         },
         title: {
-          fontSize: 38,
-          lineHeight: 42,
+          fontSize: scaleFont(38, r.titleScale),
+          lineHeight: scaleFont(42, r.titleScale),
           fontFamily: F.outfitBlack,
           letterSpacing: -1,
           marginBottom: 12,
@@ -131,11 +133,11 @@ const GetStarted: React.FC<Props> = ({ navigation }) => {
           fontFamily: F.outfitBold,
         },
       }),
-    [ink, theme],
+    [ink, theme, r.gutter, r.contentMaxWidth, r.titleScale],
   );
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+    <ScreenFrame style={styles.screen} edges={['top', 'left', 'right']} framed={false}>
       <PulseScrollView
         contentContainerStyle={styles.scrollInner}
         showsVerticalScrollIndicator={false}
@@ -184,7 +186,7 @@ const GetStarted: React.FC<Props> = ({ navigation }) => {
           </Pressable>
         </View>
       </PulseScrollView>
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

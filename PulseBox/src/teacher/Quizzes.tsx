@@ -7,7 +7,6 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
@@ -22,6 +21,8 @@ import { useQuizzesStyles } from './useQuizzesStyles';
 import ShareIcon from '../../assets/images/share.svg';
 import EditIcon from '../../assets/images/edit.svg';
 import TrashIcon from '../../assets/images/trash.svg';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { useResponsive } from '../ui/responsive';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -44,6 +45,7 @@ interface Quiz {
 
 const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
   const { styles, ink, theme } = useQuizzesStyles();
+  const r = useResponsive();
   const KIND_META = useMemo<
     Record<AssessmentKind, { label: string; accent: string; soft: string }>
   >(
@@ -242,8 +244,12 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <TabScreenHeaderBar navigation={navigation} paddingHorizontal={20}>
+    <ScreenFrame style={styles.container} edges={['top']} framed={false}>
+      <TabScreenHeaderBar
+        navigation={navigation}
+        paddingHorizontal={r.gutter}
+        onBackFallback={() => navigation.navigate('Home', { tab: 'Home' })}
+      >
         <View>
           <Text style={styles.title}>My Tasks</Text>
           <Text style={styles.subtitle}>
@@ -254,7 +260,15 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
 
       <PulseScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            width: '100%',
+            maxWidth: r.contentMaxWidth,
+            alignSelf: 'center',
+            paddingHorizontal: r.gutter,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBand}>
@@ -495,7 +509,7 @@ const Quizzes: React.FC<Props> = ({ navigation, embedded }) => {
       </PulseScrollView>
 
       {!embedded && <BottomTab navigation={navigation} currentRoute="Quizzes" />}
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

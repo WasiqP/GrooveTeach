@@ -13,7 +13,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
@@ -29,6 +28,8 @@ import {
 import { fonts as F } from '../theme';
 import Svg, { Path } from 'react-native-svg';
 import { useViewGradesStyles } from './useViewGradesStyles';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { useResponsive } from '../ui/responsive';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -130,6 +131,7 @@ function gradeColor(status: TaskGradeRecord['status'], primary: string): string 
 
 const ViewGrades: React.FC<Props> = ({ navigation, embedded, active }) => {
   const { styles, ink, theme } = useViewGradesStyles();
+  const r = useResponsive();
   const { classes } = useClasses();
   const { tasks, isLoading, getGrade } = useGradesTasks();
 
@@ -244,7 +246,7 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded, active }) => {
   }, [taskFilter, tasks, classById, classFilter]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <ScreenFrame style={styles.container} edges={['top']} framed={false}>
       <View style={styles.content}>
         {isLoading ? (
           <View style={styles.loading}>
@@ -254,11 +256,23 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded, active }) => {
           <>
             <PulseScrollView
               style={styles.scroll}
-              contentContainerStyle={styles.scrollContent}
+              contentContainerStyle={[
+                styles.scrollContent,
+                {
+                  width: '100%',
+                  maxWidth: r.contentMaxWidth,
+                  alignSelf: 'center',
+                  paddingHorizontal: r.gutter,
+                },
+              ]}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <TabScreenHeaderBar navigation={navigation} paddingHorizontal={0}>
+              <TabScreenHeaderBar
+                navigation={navigation}
+                paddingHorizontal={r.gutter}
+                onBackFallback={() => navigation.navigate('Home', { tab: 'Home' })}
+              >
                 <View>
                   <Text style={styles.title}>View Grades</Text>
                   <Text style={styles.subtitle}>
@@ -553,7 +567,7 @@ const ViewGrades: React.FC<Props> = ({ navigation, embedded, active }) => {
       </View>
 
       {!embedded && <BottomTab navigation={navigation} currentRoute="ViewGrades" />}
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 

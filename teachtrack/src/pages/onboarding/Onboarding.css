@@ -1,0 +1,130 @@
+.tt-onboardScreen {
+  min-height: 100vh;
+  background: var(--ink-canvas);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px var(--gutter);
+}
+
+.tt-onboardInner {
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  gap: 24px;
+}
+
+.tt-onboardHero {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.tt-onboardHero .tt-logo {
+  align-self: center;
+  margin-bottom: 8px;
+}
+
+.tt-onboardTitle {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 44px;
+  line-height: 48px;
+  letter-spacing: -1px;
+  color: var(--ink-ink);
+  display: inline-flex;
+  gap: 2px;
+}
+
+.tt-onboardTitleAccent {
+  color: var(--primary);
+}
+
+.tt-onboardLede {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink-inkSoft);
+  max-width: 420px;
+}
+
+.tt-onboardDivider {
+  height: 1px;
+  background: var(--ink-rowDivider);
+}
+
+.tt-onboardCta {
+  display: grid;
+  gap: 12px;
+}
+
+/* Onboarding step pages */
+.tt-onboardStep {
+  min-height: 100vh;
+  background: var(--ink-canvas);
+  padding: 32px var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tt-onboardStepInner {
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  gap: 18px;
+  text-align: center;
+  justify-items: center;
+}
+
+.tt-onboardIllustration {
+  width: 240px;
+  height: 240px;
+  border-radius: 24px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  background: var(--primary-soft);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 0 var(--ink-borderInk);
+}
+
+.tt-onboardStepTitle {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 32px;
+  letter-spacing: -0.5px;
+  color: var(--ink-ink);
+}
+
+.tt-onboardStepDesc {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-inkSoft);
+  max-width: 420px;
+}
+
+.tt-onboardDots {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 6px;
+}
+
+.tt-onboardDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--ink-rowDivider);
+}
+
+.tt-onboardDot.is-active {
+  width: 22px;
+  background: var(--primary);
+}
+
+.tt-onboardStepActions {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}

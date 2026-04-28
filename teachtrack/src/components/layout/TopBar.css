@@ -1,0 +1,45 @@
+.tt-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 0 18px;
+  border-bottom: var(--ink-borderWidth) solid var(--ink-rowDivider);
+  margin-bottom: 18px;
+}
+
+.tt-topbarText {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tt-topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tt-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  background: var(--surface-card);
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--ink-ink);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+}
+
+.tt-avatar:hover {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 var(--ink-borderInk);
+}
+
+.tt-avatar:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink-borderInk);
+}

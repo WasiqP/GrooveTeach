@@ -1,0 +1,86 @@
+.tt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: var(--ink-borderWidth, 2px) solid var(--ink-borderInk, #000);
+  border-radius: var(--radius-btn);
+  padding: 16px 24px;
+  background: var(--surface-card);
+  color: var(--ink-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 20px;
+  cursor: pointer;
+  transform: translateY(0);
+  box-shadow: 0 4px 0 var(--ink-borderInk, #000);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease, filter 140ms ease;
+  user-select: none;
+}
+
+.tt-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tt-btn:hover:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 3px 0 var(--ink-borderInk, #000);
+  filter: saturate(1.02);
+}
+
+.tt-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--ink-borderInk, #000);
+}
+
+.tt-btnText {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.tt-btn-primary {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.tt-btn-secondary {
+  background: var(--surface-card);
+  color: var(--ink-ink);
+}
+
+.tt-btn-outline {
+  background: transparent;
+  color: var(--ink-ink);
+}
+
+.tt-btn-ghost {
+  background: transparent;
+  color: var(--ink-ink);
+  box-shadow: none;
+}
+
+.tt-btn-ghost:hover:not(:disabled) {
+  background: var(--ink-pressTint);
+}
+
+.tt-btn-sm {
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.tt-btn-md {
+  padding: 14px 18px;
+  font-size: 16px;
+}
+
+.tt-btn-lg {
+  padding: 16px 24px;
+  font-size: 17px;
+}
+
+.tt-btn-full {
+  width: 100%;
+}
+

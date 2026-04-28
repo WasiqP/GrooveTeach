@@ -1,4 +1,4 @@
-# GrooveTeach / PulseBox — Backend Developer Handoff
+# GrooveTeach / TeachClip — Backend Developer Handoff
 
 **Document purpose:** Single source of truth for **product scope**, **functional requirements**, **data/schema expectations**, and **what the mobile app and web frontends implement today** (as of repository state). This is intended for backend/API design, database modeling, and integration planning.
 
@@ -7,7 +7,7 @@
 | Path | Description |
 |------|-------------|
 | `PulseBox/` | **React Native** mobile app (iOS & Android) — teacher-focused UI |
-| `Website-FrontEnd/PulseBox/` | **Vite + React** web app — marketing site + logged-in teacher web console |
+| `Website-FrontEnd/TeachClip/` | **Vite + React** web app — marketing site + logged-in teacher web console |
 | `PulseBox/web/` | **Static** HTML/JS/CSS “form viewer” for shared links (legacy feedback-collector flow; API placeholders) |
 | `README.md`, `PulseBox/AI_TEACHER_ASSISTANT_PLAN.md`, `PulseBox/PULSEBOX_PLAN.md` | Product and historical planning docs |
 
@@ -17,7 +17,7 @@
 
 ### 1.1 Problem statement
 
-Teachers spend disproportionate time on administration (planning, attendance, grading, reporting, parent communication). **PulseBox** is positioned as an **AI-assisted personal assistant for teachers** to reduce that burden and keep focus on instruction.
+Teachers spend disproportionate time on administration (planning, attendance, grading, reporting, parent communication). **TeachClip** is positioned as an **AI-assisted personal assistant for teachers** to reduce that burden and keep focus on instruction.
 
 ### 1.2 Target users
 
@@ -57,7 +57,7 @@ The following are **in scope** for the product long-term (from `README.md` and `
 
 **There is no `fetch`/REST client usage in the mobile app for core data** — state is local (AsyncStorage) via React contexts.
 
-### 2.2 Website (`Website-FrontEnd/PulseBox/`)
+### 2.2 Website (`Website-FrontEnd/TeachClip/`)
 
 - **Vite** + **React** `19.x` + **TypeScript**
 - **Routing:** `react-router-dom` v7
@@ -100,7 +100,7 @@ Root `README.md` mentions **Firebase** (Firestore, Auth, Functions). **No Fireba
 
 **Bottom tab** (`PulseBox/src/components/BottomTab.tsx`): Home, My Classes, Quizzes, Students (Responses), Settings.
 
-### 3.2 Website — routes (`Website-FrontEnd/PulseBox/src/App.tsx`)
+### 3.2 Website — routes (`Website-FrontEnd/TeachClip/src/App.tsx`)
 
 **Public / marketing**
 
@@ -169,7 +169,7 @@ interface ClassData {
 
 Seeded defaults exist if empty (demo classes).
 
-### 4.3 Website — classes (`Website-FrontEnd/PulseBox/src/context/ClassesContext.tsx`)
+### 4.3 Website — classes (`Website-FrontEnd/TeachClip/src/context/ClassesContext.tsx`)
 
 **Storage key:** `pulsebox-classes`
 
@@ -535,7 +535,7 @@ Replace placeholder base URLs (`https://api.pulsebox.app/...`) with real endpoin
 
 1. **Mobile vs web `ClassData`** — different shapes; **standardize on web model** or provide API versioning + adapters.
 2. **`SchedulePage` missing** in website while route exists — fix build or remove route until implemented.
-3. **Branding:** Web auth UI references “Raviro” in one place; product name is PulseBox — cosmetic but confusing in demos.
+3. **Branding:** Product and web UI branding should be consistent (TeachClip).
 4. **Navigation types vs registered screens** on mobile — several typed routes are not in `App.tsx`.
 5. **No shared API layer** — introduce OpenAPI or tRPC schema once backend exists so both clients codegen clients.
 

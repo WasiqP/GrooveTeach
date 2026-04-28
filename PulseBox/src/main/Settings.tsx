@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import BottomTab from '../components/BottomTab';
@@ -8,6 +7,8 @@ import TabScreenHeaderBar from '../components/TabScreenHeaderBar';
 import { fonts as F, radius, useThemeMode } from '../theme';
 import { languageLabel, useAppSettings } from '../context/AppSettingsContext';
 import { usePulseAlert } from '../context/AlertModalContext';
+import ScreenFrame from '../components/layout/ScreenFrame';
+import { useResponsive } from '../ui/responsive';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJson = require('../../package.json') as { version: string };
@@ -19,6 +20,7 @@ type Props = {
 
 const Settings: React.FC<Props> = ({ navigation, embedded }) => {
   const { ink, theme, scheme, toggleScheme, isDark } = useThemeMode();
+  const r = useResponsive();
   const { language } = useAppSettings();
   const { showAlert } = usePulseAlert();
   const appVersion = packageJson.version ?? '0.0.1';
@@ -72,9 +74,12 @@ const Settings: React.FC<Props> = ({ navigation, embedded }) => {
           marginBottom: 0,
         },
         scrollContent: {
-          paddingHorizontal: 24,
+          paddingHorizontal: r.gutter,
           paddingTop: 24,
           paddingBottom: 100,
+          width: '100%',
+          maxWidth: r.contentMaxWidth,
+          alignSelf: 'center',
         },
         settingsSection: {
           marginBottom: 28,
@@ -127,13 +132,17 @@ const Settings: React.FC<Props> = ({ navigation, embedded }) => {
           color: theme.white,
         },
       }),
-    [ink, theme],
+    [ink, theme, r.gutter, r.contentMaxWidth],
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <ScreenFrame style={styles.container} edges={['top']} framed={false}>
       <View style={styles.content}>
-        <TabScreenHeaderBar navigation={navigation} paddingHorizontal={24}>
+        <TabScreenHeaderBar
+          navigation={navigation}
+          paddingHorizontal={r.gutter}
+          onBackFallback={() => navigation.navigate('Home', { tab: 'Home' })}
+        >
           <View>
             <Text style={styles.title}>Settings</Text>
             <Text style={styles.subtitle}>Manage your account and preferences</Text>
@@ -244,7 +253,7 @@ const Settings: React.FC<Props> = ({ navigation, embedded }) => {
       </View>
 
       {!embedded && <BottomTab navigation={navigation} currentRoute="Settings" />}
-    </SafeAreaView>
+    </ScreenFrame>
   );
 };
 
