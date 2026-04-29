@@ -17,6 +17,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 const MarketingShell = lazy(() => import('./components/marketing/MarketingShell'))
 const MarketingHome = lazy(() => import('./pages/marketing/Home'))
 const MarketingAbout = lazy(() => import('./pages/marketing/About'))
+const MarketingBlog = lazy(() => import('./pages/marketing/Blog'))
 const MarketingPricing = lazy(() => import('./pages/marketing/Pricing'))
 const MarketingContact = lazy(() => import('./pages/marketing/Contact'))
 
@@ -72,6 +73,7 @@ export default function App() {
                       >
                         <Route path="/" element={<MarketingHome />} />
                         <Route path="/about" element={<MarketingAbout />} />
+                        <Route path="/blog" element={<MarketingBlog />} />
                         <Route path="/pricing" element={<MarketingPricing />} />
                         <Route path="/contact" element={<MarketingContact />} />
                       </Route>
