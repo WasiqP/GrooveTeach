@@ -1,0 +1,179 @@
+.mkt-pricing {
+  position: relative;
+  display: grid;
+  gap: 20px;
+  padding: 34px;
+  border-radius: 26px;
+  background: var(--surface-card);
+  border: 1.5px solid var(--ink-borderInk);
+  box-shadow: 0 6px 0 var(--ink-borderInk);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.mkt-pricing:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 4px 0 var(--ink-borderInk),
+    0 28px 60px -28px rgba(15, 23, 42, 0.35);
+}
+
+.mkt-pricing.is-featured {
+  background: linear-gradient(155deg, #1a1428 0%, #2b1f48 100%);
+  color: #fff;
+  border-color: var(--ink-borderInk);
+}
+
+.mkt-pricing.is-featured .mkt-pricing-name,
+.mkt-pricing.is-featured .mkt-pricing-price,
+.mkt-pricing.is-featured .mkt-pricing-feature {
+  color: #fff;
+}
+
+.mkt-pricing.is-featured .mkt-pricing-desc,
+.mkt-pricing.is-featured .mkt-pricing-cents,
+.mkt-pricing.is-featured .mkt-pricing-period,
+.mkt-pricing.is-featured .mkt-pricing-feature .mkt-pricing-bullet ~ span {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.mkt-pricing.is-featured::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 60% at 0% 0%, rgba(160, 96, 255, 0.45), transparent 60%),
+    radial-gradient(60% 60% at 100% 100%, rgba(45, 212, 191, 0.18), transparent 60%);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mkt-pricing > * {
+  position: relative;
+  z-index: 1;
+}
+
+.mkt-pricing-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mkt-pricing-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+  color: var(--ink-ink);
+  margin: 0;
+}
+
+.mkt-pricing-badge {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  border: 1.5px solid #fff;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.mkt-pricing-price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 58px;
+  line-height: 1;
+  letter-spacing: -1.6px;
+  color: var(--ink-ink);
+}
+
+.mkt-pricing-currency {
+  font-size: 26px;
+  align-self: flex-start;
+  margin-top: 10px;
+  font-weight: 800;
+  color: inherit;
+  opacity: 0.75;
+}
+
+.mkt-pricing-cents {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-inkSoft);
+}
+
+.mkt-pricing-period {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-inkSoft);
+  margin-left: 4px;
+}
+
+.mkt-pricing-desc {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-inkSoft);
+  margin: 0;
+}
+
+.mkt-pricing-features {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mkt-pricing-feature {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-ink);
+  line-height: 1.5;
+}
+
+.mkt-pricing-bullet {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.mkt-pricing.is-featured .mkt-pricing-bullet {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.mkt-pricing-cta {
+  margin-top: 4px;
+}
+
+.mkt-pricing-cta .tt-btn {
+  width: 100%;
+}
+
+.mkt-pricing.is-featured .tt-btn-secondary {
+  background: #fff;
+  color: var(--ink-ink);
+  border-color: #fff;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+}

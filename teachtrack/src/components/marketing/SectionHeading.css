@@ -1,0 +1,18 @@
+.mkt-section-heading {
+  display: grid;
+  gap: 14px;
+  max-width: 740px;
+  margin-bottom: clamp(36px, 5vw, 60px);
+}
+
+.mkt-section-heading.is-center {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  justify-items: center;
+}
+
+.mkt-section-heading.is-center .mkt-lede {
+  margin-left: auto;
+  margin-right: auto;
+}

@@ -9,7 +9,7 @@ export default function Splash() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const t = setTimeout(() => navigate('/get-started', { replace: true }), SPLASH_MS)
+    const t = setTimeout(() => navigate('/', { replace: true }), SPLASH_MS)
     return () => clearTimeout(t)
   }, [navigate])
 

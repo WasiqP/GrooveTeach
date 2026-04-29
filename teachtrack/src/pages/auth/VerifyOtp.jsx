@@ -28,7 +28,7 @@ export default function VerifyOtp() {
         <div className="tt-authCard">
           <section className="tt-authPanel">
             <div className="tt-authBackRow">
-              <Link to="/get-started" className="tt-authBackLink">
+              <Link to="/" className="tt-authBackLink">
                 <BackChevron />
                 <span>Back to Home</span>
               </Link>

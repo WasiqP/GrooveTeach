@@ -1,0 +1,250 @@
+/* ───────────────────────────────────────────────
+   TeachTrack marketing — shared tokens & utilities
+   Builds on theme.css; never overrides core tokens.
+   ─────────────────────────────────────────────── */
+
+:root {
+  --mkt-max-w: 1180px;
+  --mkt-gutter: clamp(20px, 5vw, 56px);
+  --mkt-section-y: clamp(72px, 10vw, 140px);
+
+  --mkt-grad-aurora:
+    radial-gradient(60% 60% at 12% 0%, rgba(160, 96, 255, 0.18), transparent 60%),
+    radial-gradient(50% 50% at 100% 8%, rgba(13, 148, 136, 0.12), transparent 65%),
+    radial-gradient(80% 60% at 50% 100%, rgba(160, 96, 255, 0.10), transparent 70%);
+
+  --mkt-grad-text:
+    linear-gradient(120deg, var(--ink-ink) 0%, var(--primary) 55%, #6c2bd9 100%);
+
+  --mkt-shadow-card: 0 6px 0 var(--ink-borderInk);
+  --mkt-shadow-soft: 0 18px 60px -24px rgba(15, 23, 42, 0.28);
+  --mkt-shadow-glow: 0 30px 80px -30px rgba(160, 96, 255, 0.55);
+
+  --mkt-grid:
+    linear-gradient(var(--ink-rowDivider) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, var(--ink-rowDivider) 1px, transparent 1px) 0 0 / 48px 48px;
+}
+
+[data-theme='dark'] {
+  --mkt-grad-aurora:
+    radial-gradient(60% 60% at 12% 0%, rgba(196, 159, 255, 0.22), transparent 60%),
+    radial-gradient(50% 50% at 100% 8%, rgba(45, 212, 191, 0.14), transparent 65%),
+    radial-gradient(80% 60% at 50% 100%, rgba(196, 159, 255, 0.14), transparent 70%);
+  --mkt-shadow-soft: 0 24px 70px -28px rgba(0, 0, 0, 0.7);
+}
+
+/* Reset for body when in marketing routes — let Lenis handle scrolling */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+html.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+html.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+html.lenis.lenis-stopped body {
+  overflow: hidden;
+}
+
+/* Page container */
+.mkt-page {
+  background: var(--ink-canvas);
+  color: var(--ink-ink);
+  overflow-x: clip;
+  position: relative;
+}
+
+.mkt-section {
+  padding: var(--mkt-section-y) var(--mkt-gutter);
+  position: relative;
+}
+
+.mkt-shell {
+  max-width: var(--mkt-max-w);
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Eyebrow chip used on every section */
+.mkt-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink-borderInk);
+  background: var(--surface-card);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--ink-ink);
+  box-shadow: 0 3px 0 var(--ink-borderInk);
+}
+
+.mkt-eyebrow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+/* Display headlines */
+.mkt-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(40px, 7vw, 88px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: var(--ink-ink);
+  margin: 0;
+}
+
+.mkt-display .mkt-grad {
+  background: var(--mkt-grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.mkt-h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(28px, 4.2vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink-ink);
+  margin: 0;
+}
+
+.mkt-lede {
+  font-family: var(--font-body);
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.55;
+  color: var(--ink-inkSoft);
+  max-width: 56ch;
+  margin: 0;
+}
+
+/* Soft surfaces */
+.mkt-surface {
+  background: var(--surface-card);
+  border: var(--ink-borderWidth) solid var(--ink-borderInk);
+  border-radius: 22px;
+  box-shadow: var(--mkt-shadow-card);
+}
+
+.mkt-surface-soft {
+  background: var(--primary-soft);
+  border-radius: 22px;
+  border: 1.5px solid var(--ink-rowDivider);
+}
+
+/* Hero/aurora background layer */
+.mkt-aurora {
+  position: absolute;
+  inset: 0;
+  background: var(--mkt-grad-aurora);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mkt-grid-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--mkt-grid);
+  -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 80%);
+          mask-image: radial-gradient(closest-side, #000 30%, transparent 80%);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Reveal helpers (used with framer-motion as fallback when JS disabled) */
+.mkt-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  will-change: opacity, transform;
+}
+
+/* Button — extends existing .tt-btn with marketing flavors */
+.tt-btn.tt-btn-primary.mkt-btn-glow {
+  box-shadow:
+    0 4px 0 var(--ink-borderInk),
+    0 18px 40px -10px rgba(160, 96, 255, 0.55);
+}
+
+.tt-btn.tt-btn-primary.mkt-btn-glow:hover:not(:disabled) {
+  box-shadow:
+    0 3px 0 var(--ink-borderInk),
+    0 22px 50px -10px rgba(160, 96, 255, 0.65);
+}
+
+/* Tag row used in product preview */
+.mkt-tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mkt-tag {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink-rowDivider);
+  background: var(--surface-card);
+  color: var(--ink-inkSoft);
+}
+
+.mkt-tag-violet { background: var(--primary-soft); color: var(--primary); border-color: rgba(160, 96, 255, 0.22); }
+.mkt-tag-teal   { background: rgba(13, 148, 136, 0.10); color: #0d9488; border-color: rgba(13, 148, 136, 0.22); }
+.mkt-tag-amber  { background: rgba(217, 119, 6, 0.10); color: #d97706; border-color: rgba(217, 119, 6, 0.22); }
+
+/* Generic divider line */
+.mkt-rule {
+  height: 1px;
+  background: var(--ink-rowDivider);
+  border: 0;
+  margin: 0;
+}
+
+/* Two-column layout */
+.mkt-two {
+  display: grid;
+  gap: clamp(28px, 5vw, 64px);
+  grid-template-columns: 1fr;
+  align-items: center;
+}
+
+@media (min-width: 960px) {
+  .mkt-two {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+  .mkt-two-flip {
+    grid-template-columns: 0.9fr 1.1fr;
+  }
+}
+
+/* Reduced motion compliance */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .mkt-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

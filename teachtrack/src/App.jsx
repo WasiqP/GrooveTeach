@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { UserProvider } from './context/UserContext'
@@ -8,8 +9,18 @@ import { FormsProvider } from './context/FormsContext'
 import { GradesTasksProvider } from './context/GradesTasksContext'
 import AppShell from './components/layout/AppShell'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+
+/**
+ * Marketing routes are heavy (Lenis, GSAP, Framer Motion). Lazy-load them so
+ * the authenticated app doesn't pay for animation libs it never uses.
+ */
+const MarketingShell = lazy(() => import('./components/marketing/MarketingShell'))
+const MarketingHome = lazy(() => import('./pages/marketing/Home'))
+const MarketingAbout = lazy(() => import('./pages/marketing/About'))
+const MarketingPricing = lazy(() => import('./pages/marketing/Pricing'))
+const MarketingContact = lazy(() => import('./pages/marketing/Contact'))
+
 import Splash from './pages/onboarding/Splash'
-import GetStarted from './pages/onboarding/GetStarted'
 import Onboarding01 from './pages/onboarding/Onboarding01'
 import Onboarding02 from './pages/onboarding/Onboarding02'
 import Onboarding03 from './pages/onboarding/Onboarding03'
@@ -51,9 +62,22 @@ export default function App() {
                 <GradesTasksProvider>
                   <BrowserRouter>
                     <Routes>
-                      {/* Onboarding & marketing */}
-                      <Route path="/" element={<Splash />} />
-                      <Route path="/get-started" element={<GetStarted />} />
+                      {/* Public marketing pages — share a single shell with Lenis + nav + footer */}
+                      <Route
+                        element={
+                          <Suspense fallback={<MarketingFallback />}>
+                            <MarketingShell />
+                          </Suspense>
+                        }
+                      >
+                        <Route path="/" element={<MarketingHome />} />
+                        <Route path="/about" element={<MarketingAbout />} />
+                        <Route path="/pricing" element={<MarketingPricing />} />
+                        <Route path="/contact" element={<MarketingContact />} />
+                      </Route>
+
+                      {/* Optional onboarding flow (kept at /welcome and /onboarding/* — no longer linked from anywhere) */}
+                      <Route path="/welcome" element={<Splash />} />
                       <Route path="/onboarding/1" element={<Onboarding01 />} />
                       <Route path="/onboarding/2" element={<Onboarding02 />} />
                       <Route path="/onboarding/3" element={<Onboarding03 />} />
@@ -170,5 +194,37 @@ export default function App() {
         </AppSettingsProvider>
       </UserProvider>
     </AuthProvider>
+  )
+}
+
+/**
+ * Brand-aligned loader shown while marketing chunks load.
+ * Stays subtle so it doesn't flash on warm caches.
+ */
+function MarketingFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        background: 'var(--ink-canvas)',
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 999,
+          border: '3px solid var(--ink-rowDivider)',
+          borderTopColor: 'var(--primary)',
+          animation: 'tt-mkt-spin 0.9s linear infinite',
+        }}
+      />
+      <style>{`@keyframes tt-mkt-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
   )
 }
