@@ -243,9 +243,9 @@ export default function MarketingBlog() {
                 <Button type="submit" className="mkt-btn-glow">
                   Subscribe
                 </Button>
-                <span className="mkt-blog-newsFine">
+                {/* <span className="mkt-blog-newsFine">
                   Coming soon — this form is a design placeholder.
-                </span>
+                </span> */}
               </form>
             </div>
           </Reveal>

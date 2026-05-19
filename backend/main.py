@@ -1,22 +1,6 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from dotenv import load_dotenv
-import os
-load_dotenv()
+"""Run with: python main.py  OR  uvicorn app.main:app --reload"""
 
+import uvicorn
 
-app = FastAPI()
-
-@app.get("/")
-def Server_hello():
-    return{
-        "status": 200,
-        "message": "Server is running"
-    }
-
-@app.get("/Teachtrack")
-def Teachtrack():
-    return{
-        "status": 200,
-        "message": "Teachtrack is running"
-    }
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

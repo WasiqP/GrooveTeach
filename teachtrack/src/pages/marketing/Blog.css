@@ -410,6 +410,10 @@
   position: relative;
 }
 
+.mkt-blog-newsCard .mkt-h2 {
+  color: #fff;
+}
+
 .mkt-blog-newsCard::before {
   content: '';
   position: absolute;
